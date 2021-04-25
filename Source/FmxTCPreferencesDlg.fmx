@@ -1,0 +1,91 @@
+object TCPreferencesDlg: TTCPreferencesDlg
+  Left = 0
+  Top = 0
+  Caption = 'Timecode Preferences'
+  ClientHeight = 176
+  ClientWidth = 254
+  FormFactor.Width = 1366
+  FormFactor.Height = 768
+  FormFactor.Devices = [Desktop]
+  OnActivate = FormActivate
+  OnCreate = FormCreate
+  OnClose = FormClose
+  DesignerMobile = False
+  DesignerWidth = 0
+  DesignerHeight = 0
+  DesignerDeviceName = ''
+  DesignerOrientation = 0
+  DesignerOSVersion = ''
+  object Layout1: TLayout
+    Align = MostBottom
+    Height = 50.000000000000000000
+    Position.Y = 126.000000000000000000
+    Width = 254.000000000000000000
+    object BtnCancel: TButton
+      Height = 22.000000000000000000
+      ModalResult = 2
+      Position.X = 40.000000000000000000
+      Position.Y = 12.000000000000000000
+      Text = 'Cancel'
+      Width = 80.000000000000000000
+    end
+    object BtnOk: TButton
+      Height = 22.000000000000000000
+      ModalResult = 1
+      Position.X = 128.000000000000000000
+      Position.Y = 12.000000000000000000
+      Text = 'Ok'
+      Width = 80.000000000000000000
+    end
+  end
+  object cbFPS: TComboBox
+    DisableFocusEffect = False
+    Height = 22.000000000000000000
+    ListBoxResource = 'transparentlistboxstyle'
+    Position.X = 48.000000000000000000
+    Position.Y = 16.000000000000000000
+    Width = 193.000000000000000000
+    OnChange = cbFPSChange
+  end
+  object cbFPF: TComboBox
+    DisableFocusEffect = False
+    Height = 22.000000000000000000
+    ListBoxResource = 'transparentlistboxstyle'
+    Position.X = 48.000000000000000000
+    Position.Y = 48.000000000000000000
+    Width = 193.000000000000000000
+  end
+  object Label1: TLabel
+    Height = 13.500000000000000000
+    Position.X = 16.000000000000000000
+    Position.Y = 16.000000000000000000
+    TextSettings.WordWrap = False
+    Text = 'FPS'
+    Width = 20.500000000000000000
+  end
+  object Label2: TLabel
+    Height = 14.000000000000000000
+    Position.X = 16.000000000000000000
+    Position.Y = 48.000000000000000000
+    TextSettings.WordWrap = False
+    Text = 'FPF'
+    Width = 20.000000000000000000
+  end
+  object Label3: TLabel
+    Height = 14.000000000000000000
+    Position.X = 88.000000000000000000
+    Position.Y = 88.000000000000000000
+    TextSettings.WordWrap = False
+    Text = 'Custom FPS...'
+    Width = 72.000000000000000000
+  end
+  object ebCustomFPS: TEdit
+    Touch.InteractiveGestures = [LongTap, DoubleTap]
+    Text = '00.0000'
+    Position.X = 168.000000000000000000
+    Position.Y = 86.000000000000000000
+    Width = 73.000000000000000000
+    Height = 22.000000000000000000
+    OnChange = ebCustomFPSChange
+  end
+end

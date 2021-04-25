@@ -1,0 +1,3 @@
+TTCCalculator BITMAP "Source\\Resources\\TTCCalculator.bmp"
+TTCEdit BITMAP "Source\\Resources\\TTCEdit.bmp"
+TTCLabel BITMAP "Source\\Resources\\TTCLabel.bmp"

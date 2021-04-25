@@ -1,0 +1,72 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{2F09E434-C237-4969-A246-0A4421A2D363}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="TimecodeRTL.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="TimecodeFMX.cbproj">
+            <Dependencies>TimecodeRTL.cbproj</Dependencies>
+        </Projects>
+        <Projects Include="TimecodeVCL.cbproj">
+            <Dependencies>TimecodeRTL.cbproj</Dependencies>
+        </Projects>
+        <Projects Include="TimecodeVCLFormTest.cbproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="TimecodeRTL">
+        <MSBuild Projects="TimecodeRTL.cbproj"/>
+    </Target>
+    <Target Name="TimecodeRTL:Clean">
+        <MSBuild Projects="TimecodeRTL.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TimecodeRTL:Make">
+        <MSBuild Projects="TimecodeRTL.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="TimecodeFMX" DependsOnTargets="TimecodeRTL">
+        <MSBuild Projects="TimecodeFMX.cbproj"/>
+    </Target>
+    <Target Name="TimecodeFMX:Clean" DependsOnTargets="TimecodeRTL:Clean">
+        <MSBuild Projects="TimecodeFMX.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TimecodeFMX:Make" DependsOnTargets="TimecodeRTL:Make">
+        <MSBuild Projects="TimecodeFMX.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="TimecodeVCL" DependsOnTargets="TimecodeRTL">
+        <MSBuild Projects="TimecodeVCL.cbproj"/>
+    </Target>
+    <Target Name="TimecodeVCL:Clean" DependsOnTargets="TimecodeRTL:Clean">
+        <MSBuild Projects="TimecodeVCL.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TimecodeVCL:Make" DependsOnTargets="TimecodeRTL:Make">
+        <MSBuild Projects="TimecodeVCL.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="TimecodeVCLFormTest">
+        <MSBuild Projects="TimecodeVCLFormTest.cbproj"/>
+    </Target>
+    <Target Name="TimecodeVCLFormTest:Clean">
+        <MSBuild Projects="TimecodeVCLFormTest.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TimecodeVCLFormTest:Make">
+        <MSBuild Projects="TimecodeVCLFormTest.cbproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="TimecodeRTL;TimecodeFMX;TimecodeVCL;TimecodeVCLFormTest"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="TimecodeRTL:Clean;TimecodeFMX:Clean;TimecodeVCL:Clean;TimecodeVCLFormTest:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="TimecodeRTL:Make;TimecodeFMX:Make;TimecodeVCL:Make;TimecodeVCLFormTest:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
