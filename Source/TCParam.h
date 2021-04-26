@@ -5,7 +5,7 @@
 //---------------------------------------------------------------------------
 #include <SysUtils.hpp>
 #include <Classes.hpp>
-#include "timecode.h"
+#include "Timecode.h"
 
  // ---------------------------------------------------------------------------
 class PACKAGE TTCParam : public TComponent {

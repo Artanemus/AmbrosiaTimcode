@@ -12,9 +12,6 @@
         <Projects Include="TimecodeVCL.cbproj">
             <Dependencies>TimecodeRTL.cbproj</Dependencies>
         </Projects>
-        <Projects Include="TimecodeVCLFormTest.cbproj">
-            <Dependencies/>
-        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -50,23 +47,14 @@
     <Target Name="TimecodeVCL:Make" DependsOnTargets="TimecodeRTL:Make">
         <MSBuild Projects="TimecodeVCL.cbproj" Targets="Make"/>
     </Target>
-    <Target Name="TimecodeVCLFormTest">
-        <MSBuild Projects="TimecodeVCLFormTest.cbproj"/>
-    </Target>
-    <Target Name="TimecodeVCLFormTest:Clean">
-        <MSBuild Projects="TimecodeVCLFormTest.cbproj" Targets="Clean"/>
-    </Target>
-    <Target Name="TimecodeVCLFormTest:Make">
-        <MSBuild Projects="TimecodeVCLFormTest.cbproj" Targets="Make"/>
-    </Target>
     <Target Name="Build">
-        <CallTarget Targets="TimecodeRTL;TimecodeFMX;TimecodeVCL;TimecodeVCLFormTest"/>
+        <CallTarget Targets="TimecodeRTL;TimecodeFMX;TimecodeVCL"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TimecodeRTL:Clean;TimecodeFMX:Clean;TimecodeVCL:Clean;TimecodeVCLFormTest:Clean"/>
+        <CallTarget Targets="TimecodeRTL:Clean;TimecodeFMX:Clean;TimecodeVCL:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TimecodeRTL:Make;TimecodeFMX:Make;TimecodeVCL:Make;TimecodeVCLFormTest:Make"/>
+        <CallTarget Targets="TimecodeRTL:Make;TimecodeFMX:Make;TimecodeVCL:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
