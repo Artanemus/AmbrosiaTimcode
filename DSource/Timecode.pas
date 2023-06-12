@@ -3,30 +3,7 @@ unit Timecode;
 interface
 
 uses
-  System.SysUtils, System.Classes;
-
-type
-  FPS_TABLE = record
-    Caption: array [0 .. 24] of Char;
-    fps: Double;
-    FPSCaption: array [0 .. 24] of Char;
-  end;
-
-type
-  FPF_TABLE = record
-    Caption: array [0 .. 24] of Char;
-    fpf: Integer;
-    GateWidth: Double;
-    perf: Integer;
-    gate: Integer;
-  end;
-
-type
-  TC_DISPLAYSTYLE = record
-    Caption: array [0 .. 24] of Char;
-    style: Integer;
-    AltCaption: array [0 .. 24] of Char;
-  end;
+  System.SysUtils, System.Classes, TimecodeTypes;
 
 type
 
@@ -34,20 +11,7 @@ type
 
   public
 
-    type
-    eStyle = (tcStyle, tcTimeStyle, tcFrameStyle, tcFootageStyle);
 
-  type
-    eStandard = (tcPAL, tcFILM, tcNTSCDF, tcNTSC, tcCUSTOM);
-
-  type
-    ePerforation = (mm16, mm16_35_sound, mm35_3perf, mm35_4perf, mm35_8perf,
-      mm65_70_3perf, mm65_70_4perf, mm65_70_5perf, mm65_70_6perf, mm65_70_7perf,
-      mm65_70_8perf, mm65_70_9perf, mm65_70_10perf, mm65_70_11perf,
-      mm65_70_12perf, mm65_70_13perf, mm65_70_14perf, mm65_70_15perf);
-
-  type
-    eOperation = (tcMultiply, tcAdd, tcSubtract, tcDivide, tcEquals, tcNone);
 
   private
     FStyle: eStyle;
@@ -411,6 +375,48 @@ begin
 end;
 
 procedure TTimecode.ToggleStyle(Forward: Boolean);
+begin
+
+end;
+
+{ TCOperator }
+
+class operator TCOperator.Add(a, b: TCOperator): TTimecode;
+begin
+
+end;
+
+class operator TCOperator.Equal(a, b: TCOperator): Boolean;
+begin
+
+end;
+
+class operator TCOperator.GreaterThan(a, b: TCOperator): Boolean;
+begin
+
+end;
+
+class operator TCOperator.GreaterThanOrEqual(a, b: TCOperator): Boolean;
+begin
+
+end;
+
+class operator TCOperator.LessThan(a, b: TCOperator): Boolean;
+begin
+
+end;
+
+class operator TCOperator.LessThanOrEqual(a, b: TCOperator): Boolean;
+begin
+
+end;
+
+class operator TCOperator.NotEqual(a, b: TCOperator): Boolean;
+begin
+
+end;
+
+class operator TCOperator.Subtract(a, b: TCOperator): TTimecode;
 begin
 
 end;
