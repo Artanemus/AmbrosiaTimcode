@@ -25,6 +25,7 @@ package Timecode_RTL_Delphi;
 {$IMAGEBASE $400000}
 {$DEFINE DEBUG}
 {$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'Artanemus - SMPTE EBU Timecode - Delphi RTL.'}
 {$RUNONLY}
 {$IMPLICITBUILD ON}
 
