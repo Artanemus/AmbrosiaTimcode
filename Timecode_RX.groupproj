@@ -3,6 +3,12 @@
         <ProjectGuid>{2F09E434-C237-4969-A246-0A4421A2D363}</ProjectGuid>
     </PropertyGroup>
     <ItemGroup>
+        <Projects Include="Timecode_RTL_Delphi.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="Timecode_VCL_Delphi.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="TimecodeRTL.cbproj">
             <Dependencies/>
         </Projects>
@@ -20,6 +26,24 @@
             <Default.Personality/>
         </BorlandProject>
     </ProjectExtensions>
+    <Target Name="Timecode_RTL_Delphi">
+        <MSBuild Projects="Timecode_RTL_Delphi.dproj"/>
+    </Target>
+    <Target Name="Timecode_RTL_Delphi:Clean">
+        <MSBuild Projects="Timecode_RTL_Delphi.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Timecode_RTL_Delphi:Make">
+        <MSBuild Projects="Timecode_RTL_Delphi.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Timecode_VCL_Delphi">
+        <MSBuild Projects="Timecode_VCL_Delphi.dproj"/>
+    </Target>
+    <Target Name="Timecode_VCL_Delphi:Clean">
+        <MSBuild Projects="Timecode_VCL_Delphi.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Timecode_VCL_Delphi:Make">
+        <MSBuild Projects="Timecode_VCL_Delphi.dproj" Targets="Make"/>
+    </Target>
     <Target Name="TimecodeRTL">
         <MSBuild Projects="TimecodeRTL.cbproj"/>
     </Target>
@@ -48,13 +72,13 @@
         <MSBuild Projects="TimecodeVCL.cbproj" Targets="Make"/>
     </Target>
     <Target Name="Build">
-        <CallTarget Targets="TimecodeRTL;TimecodeFMX;TimecodeVCL"/>
+        <CallTarget Targets="Timecode_RTL_Delphi;Timecode_VCL_Delphi;TimecodeRTL;TimecodeFMX;TimecodeVCL"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="TimecodeRTL:Clean;TimecodeFMX:Clean;TimecodeVCL:Clean"/>
+        <CallTarget Targets="Timecode_RTL_Delphi:Clean;Timecode_VCL_Delphi:Clean;TimecodeRTL:Clean;TimecodeFMX:Clean;TimecodeVCL:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="TimecodeRTL:Make;TimecodeFMX:Make;TimecodeVCL:Make"/>
+        <CallTarget Targets="Timecode_RTL_Delphi:Make;Timecode_VCL_Delphi:Make;TimecodeRTL:Make;TimecodeFMX:Make;TimecodeVCL:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>
