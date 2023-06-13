@@ -33,6 +33,7 @@ requires
   rtl;
 
 contains
-  Timecode in 'DSource\Timecode.pas';
+  Timecode in 'DSource\Timecode.pas',
+  TimecodeTypes in 'DSource\TimecodeTypes.pas';
 
 end.

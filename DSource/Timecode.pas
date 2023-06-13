@@ -3,30 +3,22 @@ unit Timecode;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.DateUtils;
+  System.SysUtils, System.Classes, System.DateUtils, Math, TimecodeTypes;
 
 type
 
-  eStyle = (tcStyle, tcTimeStyle, tcFrameStyle, tcFootageStyle);
-
-  eStandard = (tcPAL, tcFILM, tcNTSCDF, tcNTSC, tcCUSTOM);
-
-  ePerforation = (mm16, mm16_35_sound, mm35_3perf, mm35_4perf, mm35_8perf,
-    mm65_70_3perf, mm65_70_4perf, mm65_70_5perf, mm65_70_6perf, mm65_70_7perf,
-    mm65_70_8perf, mm65_70_9perf, mm65_70_10perf, mm65_70_11perf,
-    mm65_70_12perf, mm65_70_13perf, mm65_70_14perf, mm65_70_15perf);
-
-  eOperation = (tcMultiply, tcAdd, tcSubtract, tcDivide, tcEquals, tcNone);
-
-  TTimecode = class(TComponent)
+  TTimecode = record
   private
+    fFrames: Double;
+    fFPS: Double;
+    fFPF: Double;
+
     FStyle: eStyle;
     FFPFIndex: Integer;
     FFPSIndex: Integer;
     fStyleIndex: Integer;
     FCustomFPS: Double;
     FUseGlobal: Boolean;
-    fFrames: Double;
     FUseDropFrame: Boolean;
     FOnChange: TNotifyEvent;
     fTCFPSCount: Integer;
@@ -63,23 +55,28 @@ type
     function GetStyle: eStyle;
     procedure SetStyle(value: eStyle);
 
-  protected
-    procedure Change; virtual;
+    procedure Change;
 
   public
 
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
+    constructor Create(frames: Double); overload;
+    constructor Create(FPS, FPF, frames: Double); overload;
+
+    class operator Add(a, b: TTimecode): TTimecode; // Binary
+    class operator Subtract(a, b: TTimecode): TTimecode; // Binary
+    class operator Equal(a, b: TTimecode): Boolean; // Comparison
+    class operator NotEqual(a, b: TTimecode): Boolean; // Comparison
+    class operator GreaterThan(a, b: TTimecode): Boolean; // Comparison
+    class operator LessThan(a, b: TTimecode): Boolean; // Comparison
+    class operator GreaterThanOrEqual(a, b: TTimecode): Boolean; // Comparison
+    class operator LessThanOrEqual(a, b: TTimecode): Boolean; // Comparison
+    class operator Assign(var Dest: TTimecode; const [ref] Src: TTimecode);
+    // Binary
 
     {
-      const operator = (const t : TTimecode) : integer; // equates
-      const operator <> (const t : TTimecode) : integer; // not equal
-      const operator < (const t : TTimecode) : integer; //
-      const operator > (const t : TTimecode) : integer; //
-      const operator >= (const t : TTimecode) : integer; //
-      const operator <= (const t : TTimecode) : integer; //
-      operator - (const t : TTimecode) : TTimecode; // subtract
-      operator + (const t : TTimecode) : TTimecode; // addition
+      // NOTE: implementation syntax...
+      class operator typeName.comparisonOp(a: type; b: type): Boolean;
+      class operator typeName.binaryOp(a: type; b: type): resultType;
     }
 
     function ConvertFramesNDtoDF(value: Double): Double;
@@ -93,11 +90,9 @@ type
     function FramesToTime(): TTime;
 
     procedure TimeToFrames(dt: TTime);
-    procedure Assign(Source: TPersistent); override;
     procedure ToggleFPS(Forward: Boolean = true);
     procedure ToggleFPF(Forward: Boolean = true);
     procedure ToggleStyle(Forward: Boolean = true);
-
     // Special display string ...
     property Status: String read GetStatus;
     property StatusFPS: String read GetStatusFPS;
@@ -115,72 +110,23 @@ type
     property TCFPFCount: Integer read fTCFPFCount;
     property TCDisplayStylesCount: Integer read fTCDisplayStylesCount;
 
-  published
-    property Standard: eStandard read GetStandard write SetStandard
-      default tcPAL;
-    property UseGlobal: Boolean read FUseGlobal write FUseGlobal default true;
+    property Standard: eStandard read GetStandard write SetStandard;
+    property UseGlobal: Boolean read FUseGlobal write FUseGlobal;
     property CustomFPS: Double read GetCustomFPS write SetCustomFPS;
-    property Frames: Double read GetFrames write SetFrames;
-    property FPSIndex: Integer read GetFPSIndex write SetFPSIndex default 0;
-    property FPFIndex: Integer read GetFPFIndex write SetFPFIndex default 3;
-    property StyleIndex: Integer read GetStyleIndex write SetStyleIndex
-      default 0;
+    property frames: Double read GetFrames write SetFrames;
+    property FPSIndex: Integer read GetFPSIndex write SetFPSIndex;
+    property FPFIndex: Integer read GetFPFIndex write SetFPFIndex;
+    property StyleIndex: Integer read GetStyleIndex write SetStyleIndex;
     property Text: String read GetText write SetText;
-    property style: eStyle read GetStyle write SetStyle default tcStyle;
-    property UseDropFrame: Boolean read FUseDropFrame write FUseDropFrame
-      default true;
+    property style: eStyle read GetStyle write SetStyle;
+    property UseDropFrame: Boolean read FUseDropFrame write FUseDropFrame;
     property Perforation: ePerforation read GetPerforation write SetPerforation;
 
   end;
 
-type
-  TCOperator = record
-    tc: TTimecode;
-    class operator Add(a, b: TCOperator): TCOperator; // Binary
-    class operator Subtract(a, b: TCOperator): TCOperator; // Binary
-    class operator Equal(a, b: TCOperator): Boolean; // Comparison
-    class operator NotEqual(a, b: TCOperator): Boolean; // Comparison
-    class operator GreaterThan(a, b: TCOperator): Boolean; // Comparison
-    class operator LessThan(a, b: TCOperator): Boolean; // Comparison
-    class operator GreaterThanOrEqual(a, b: TCOperator): Boolean; // Comparison
-    class operator LessThanOrEqual(a, b: TCOperator): Boolean; // Comparison
-    // Assign(var Dest: type; const [ref] Src: type);
-    class operator Assign(var Dest: TCOperator; const [ref] Src: TCOperator); // Binary
-  end;
-
-  {
-    // NOTE: implementation syntax...
-    class operator typeName.comparisonOp(a: type; b: type): Boolean;
-    class operator typeName.binaryOp(a: type; b: type): resultType;
-  }
-
-var
-//  fpsPtr: ^FPS_TABLE;
-//  fpfPtr: ^FPF_TABLE;
-//  tcdisplaystylePtr: ^TC_DISPLAYSTYLE;
-
-  MathsChar: PWideChar;
-
 implementation
 
-procedure ValidCtrCheck(TTimecode: TTimecode);
-begin
-  TTimecode.Create(nil);
-end;
-
-
-procedure Register;
-begin
-  RegisterComponents('Artanemus', [TTimecode]);
-end;
-
 { TTimecode }
-
-procedure TTimecode.Assign(Source: TPersistent);
-begin
-  inherited;
-
-end;
 
 procedure TTimecode.Change;
 begin
@@ -188,96 +134,66 @@ begin
 end;
 
 function TTimecode.ConvertFramesDFtoND(value: Double): Double;
+var
+  frac, f1, f2, sec: Double;
 begin
-
+  // convert 29.97 fps to 30 fps - using drop-frame conversion rules.
+  // calculate seconds
+  sec := value / GetFPS();
+  // count the minute intervals x 2
+  // extract the integer portion of the double
+  f1 := FMod(sec, 60.0);
+  // calculate frames
+  f1 := f1 * 2;
+  // count the number of 10min blocks x 2
+  // extract the integer portion of the double
+  f2 := FMod(sec, 600.0);
+  // calculate frames
+  f2 := f2 * 2;
+  // wrap it up
+  result := (value + f1 - f2);
 end;
 
 function TTimecode.ConvertFramesNDtoDF(value: Double): Double;
 begin
-
+  // convert ND to seconds then divide by DF.
+  // Returns frames count at 29.97.
+  result := value / 30.0 * 29.97;
 end;
 
-constructor TTimecode.Create(AOwner: TComponent);
+constructor TTimecode.Create(frames: Double);
 begin
-  inherited Create(AOwner);
-  FUseGlobal := True;
-//  FFPSIndex := GlobalFPSIndex;
-//  FFPFIndex := GlobalFPFIndex;
-//  FCustomFPS := GlobalCustomFPS;
+  fFrames := frames;
+  FUseGlobal := false;
+  FFPSIndex := GlobalFPSIndex;   //3
+  FFPFIndex := GlobalFPFIndex;   //0
+  FCustomFPS := GlobalCustomFPS; //12.0
   FStyle := tcStyle;
-  fFrames := 0;
 
-  {
-
-  SetLength(fps_table, 5);
-
-  fps_table[0] := ('PAL', 25.00, '25fps');
-  fps_table[1] := ('FILM', 24.00, '24fps');
-  fps_table[2] := ('NTSC DF', 29.97, '29.97');
-  fps_table[3] := ('NTSC', 30.00, '30fps');
-  fps_table[4] := ('CUSTOM', 12.00, 'Custom fps');
-
-  fTCFPSCount := Length(fps_table);
-
-  SetLength(fpf_table, 18);
-
-	fpf_table[0] := ('16mm', 40, 0.3, 2, 16);
-	fpf_table[1] := ('16/35mm sound', 16, 0.75, 2, 16);
-	fpf_table[2] := ('35mm 3-perf', 22, 0.5454545454545, 3, 35);
-	fpf_table[3] := ('35mm 4-perf', 16, 0.75, 4, 35);
-	fpf_table[4] := ('35mm 8-perf', 8, 1.5, 8, 65);
-	fpf_table[5] := ('65/70mm 3-perf', 22, 0.5454545454545, 3, 65);
-	fpf_table[6] := ('65/70mm 4-perf', 16, 0.75, 4, 65);
-	fpf_table[7] := ('65/70mm 5-perf', 13, 0.9230769230769, 5, 65);
-	fpf_table[8] := ('65/70mm 6-perf', 11, 1.090909090909, 6, 65);
-	fpf_table[9] := ('65/70mm 7-perf', 10, 1.2, 7, 65);
-	fpf_table[10] := ('65/70mm 8-perf', 8, 1.5, 8, 65);
-	fpf_table[11] := ('65/70mm 9-perf', 8, 1.5, 9, 65);
-	fpf_table[12] := ('65/70mm 10-perf', 7, 1.714285714286, 10, 65);
-	fpf_table[13] := ('65/70mm 11-perf', 6, 2.0, 11, 65);
-	fpf_table[14] := ('65/70mm 12-perf', 6, 2.0, 12, 6);
-	fpf_table[15] := ('65/70mm 13-perf', 5, 2.4, 13, 65);
-	fpf_table[16] := ('65/70mm 14-perf', 5, 2.4, 14, 65);
-	fpf_table[17] := ('65/70mm 15-perf', 5, 2.4, 15, 65);
-
-
-fTCFPFCount := Length(fpf_table);
-
-SetLength(tc_displaystyle,4);
-tc_displaystyle[0] := ('HH:MM:SS:FF',0,'Timecode');
-tc_displaystyle[1] := ('Hr.Min.Sec',1,'Time');
-tc_displaystyle[2] := ('Frames',2,'Frames');
-tc_displaystyle[3] := ('Footage',3,'Footage');
-
-fTCDisplayStylesCount := Length(tc_displaystyle);
-
-SetLength(MathsChar,5);
-MathsChar[0] := '*';
-MathsChar[1] := '+';
-MathsChar[2] := '-';
-MathsChar[3] := '/';
-MathsChar[4] := '=';
-
-}
+  fFPS := GetFPS;
+  fFPF := GetFPF
 
 end;
 
-
-destructor TTimecode.Destroy;
+constructor TTimecode.Create(FPS, FPF, frames: Double);
 begin
-//  fps_table := nil;
-//  fpf_table := nil;
-//  tc_displaystyle := nil;
-  MathsChar := nil;
-  inherited;
+  FUseGlobal := true;
+  FFPSIndex := GlobalFPSIndex;
+  FFPFIndex := GlobalFPFIndex;
+  FCustomFPS := GlobalCustomFPS;
+  FStyle := tcStyle;
+
+  fFrames := frames;
+  fFPS := fps;
+  fFPF := fpf;
 end;
 
 function TTimecode.FramesToTime: TTime;
 var
-dt: TDateTime;
+  dt: TDateTime;
 begin
-  dt :=  (fFrames / GetFPS()) / SecsPerDay * 1000.0;
-	result := TimeOf(dt);
+  dt := (fFrames / GetFPS()) / SecsPerDay * 1000.0;
+  result := TimeOf(dt);
 end;
 
 function TTimecode.GetCustomFPS: Double;
@@ -431,7 +347,80 @@ begin
 end;
 
 procedure TTimecode.SetText(value: String);
+var
+  str1, str2: String;
+  x, y: Integer;
+  frames, val: Double;
+  fpm: Double;
+  fph: Double;
+
 begin
+  { TODO :
+    Extract feet + frames from Footage Style
+    Extract fraction of seconds from Time Style }
+  fpm := GetFPS() * 60.0;
+  fph := GetFPS() * 3600.0;
+  value := value.Trim();
+  // remove all non-numerical characters
+  // working backwards....
+  // no error checking of Hrs, Mins, secs, Frames.....!!
+  str1 := '00000000';
+  y := 8;
+
+  for x := Length(Value) downto 0 do
+  begin
+//    while ((x>0) and (value[x] < '0' or value[x] > '9')) do
+//      x := x-1;
+
+    { for (x = value.Length(), y = 8; x > 0 && y > 0; x--, y--) begin
+      while (x && (value[x] < '0' || value[x] > '9'))
+      x--;
+      if (x)
+      str1[y] = value[x];
+      end; }
+
+  end;
+
+  case (FStyle) of
+
+    eStyle.tcStyle: // cheap and nasty way to get frame count
+      // HH::MM::SS::FF
+      begin
+        str2 := str1.SubString(1, 2);
+        frames := StrToInt(str2) * fph;
+        str2 := str1.SubString(3, 2);
+        frames := StrToInt(str2) * fpm + frames;
+        str2 := str1.SubString(5, 2);
+        frames := StrToInt(str2) * GetFPS() + frames;
+        str2 := str1.SubString(7, 2);
+        frames := frames + StrToInt(str2);
+      end;
+    eStyle.tctimeStyle:
+      begin
+        // hrs::Mins::Secs...
+        str2 := str1.SubString(3, 2);
+        frames := StrToInt(str2) * fph;
+        str2 := str1.SubString(5, 2);
+        frames := StrToInt(str2) * fpm + frames;
+        str2 := str1.SubString(7, 2);
+        frames := StrToInt(str2) * GetFPS() + frames;
+      end;
+
+    eStyle.tcframeStyle:
+      begin
+        frames := StrToIntDef(str1, 0);
+      end;
+    eStyle.tcfootageStyle:
+      begin
+        // parameter contains feet only; - no frames...
+        frames := StrToInt(str1);
+        frames := frames * GetFPF();
+      end;
+
+  end;
+
+  // Update fTimeStamp
+  SetFrames(frames);
 
 end;
 
@@ -462,49 +451,76 @@ end;
 
 { TCOperator }
 
-class operator TCOperator.Add(a, b: TCOperator): TCOperator;
+class operator TTimecode.Add(a, b: TTimecode): TTimecode;
 begin
-
+  result.fFrames := a.fFrames + b.fFrames;
 end;
 
-class operator TCOperator.Assign(var Dest: TCOperator; const [ref] Src: TCOperator);
+class operator TTimecode.Assign(var Dest: TTimecode;
+  const [ref] Src: TTimecode);
 begin
+  Dest.fFrames := Src.fFrames;
+  Dest.fFPF := Src.fFPF;
+  Dest.fFPS := Src.fFPS;
 
+  Dest.FStyle := Src.FStyle;
+  Dest.FFPFIndex := Src.FFPFIndex;
+  Dest.FFPSIndex := Src.FFPSIndex;
+  Dest.FCustomFPS := Src.FCustomFPS;
+  Dest.FUseGlobal := Src.FUseGlobal;
 end;
 
-class operator TCOperator.Equal(a, b: TCOperator): Boolean;
+class operator TTimecode.Equal(a, b: TTimecode): Boolean;
 begin
-
+  if (a.fFrames = b.fFrames) then
+    result := true
+  else
+    result := false;
 end;
 
-class operator TCOperator.GreaterThan(a, b: TCOperator): Boolean;
+class operator TTimecode.GreaterThan(a, b: TTimecode): Boolean;
 begin
-
+  if (a.fFrames > b.fFrames) then
+    result := true
+  else
+    result := false;
 end;
 
-class operator TCOperator.GreaterThanOrEqual(a, b: TCOperator): Boolean;
+class operator TTimecode.GreaterThanOrEqual(a, b: TTimecode): Boolean;
 begin
-
+  if (a.fFrames >= b.fFrames) then
+    result := true
+  else
+    result := false;
 end;
 
-class operator TCOperator.LessThan(a, b: TCOperator): Boolean;
+class operator TTimecode.LessThan(a, b: TTimecode): Boolean;
 begin
-
+  if (a.fFrames < b.fFrames) then
+    result := true
+  else
+    result := false;
 end;
 
-class operator TCOperator.LessThanOrEqual(a, b: TCOperator): Boolean;
+class operator TTimecode.LessThanOrEqual(a, b: TTimecode): Boolean;
 begin
-
+  if (a.fFrames <= b.fFrames) then
+    result := true
+  else
+    result := false;
 end;
 
-class operator TCOperator.NotEqual(a, b: TCOperator): Boolean;
+class operator TTimecode.NotEqual(a, b: TTimecode): Boolean;
 begin
-
+  if (a.fFrames <> b.fFrames) then
+    result := true
+  else
+    result := false;
 end;
 
-class operator TCOperator.Subtract(a, b: TCOperator): TCOperator;
+class operator TTimecode.Subtract(a, b: TTimecode): TTimecode;
 begin
-
+  result.fFrames := a.fFrames - b.fFrames;
 end;
 
 end.
