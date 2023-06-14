@@ -4,18 +4,7 @@ interface
 
 uses System.SysUtils, System.Classes;
 
-
-  type eStyle = (tcStyle, tcTimeStyle, tcFrameStyle, tcFootageStyle);
-
-  type eStandard = (tcPAL, tcFILM, tcNTSCDF, tcNTSC, tcCUSTOM);
-
-  type ePerforation = (mm16, mm16_35_sound, mm35_3perf, mm35_4perf, mm35_8perf,
-  mm65_70_3perf, mm65_70_4perf, mm65_70_5perf, mm65_70_6perf, mm65_70_7perf,
-  mm65_70_8perf, mm65_70_9perf, mm65_70_10perf, mm65_70_11perf,
-  mm65_70_12perf, mm65_70_13perf, mm65_70_14perf, mm65_70_15perf);
-
-  type eOperation = (tcMultiply, tcAdd, tcSubtract, tcDivide, tcEquals, tcNone);
-
+type eOperation = (tcMultiply, tcAdd, tcSubtract, tcDivide, tcEquals, tcNone);
 
 type
   FPSrecord = record
