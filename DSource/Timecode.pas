@@ -18,9 +18,10 @@ type
 
   public
 
-    constructor Create(frames: Double); overload;
-    constructor Create(frames, FPS: Double); overload;
-    constructor Create(frames, FPS, FPF: Double); overload;
+    // In Delphi 10.4 'Managed Records' was introduced.
+    // variables can now be initialized
+    class operator Initialize (out Dest: TTimecode);
+    class operator Finalize (var Dest: TTimecode);
 
     class operator Add(a, b: TTimecode): TTimecode; // Binary
     class operator Subtract(a, b: TTimecode): TTimecode; // Binary
@@ -88,25 +89,9 @@ begin
   result := value / 30.0 * 29.97;
 end;
 
-constructor TTimecode.Create(frames: Double);
+class operator TTimecode.Finalize(var Dest: TTimecode);
 begin
-  fFrames := frames;
-  fFPS := DefFramesPerSec;
-  fFPF := DefFramesPerFoot;
-end;
-
-constructor TTimecode.Create(frames, FPS: Double);
-begin
-  fFrames := frames;
-  fFPS := FPS;
-  fFPF := DefFramesPerFoot;
-end;
-
-constructor TTimecode.Create(frames, FPS, FPF: Double);
-begin
-  fFrames := frames;
-  fFPS := FPS;
-  fFPF := FPF;
+//  Log('destroyed' + IntToHex (IntPtr(@Dest)))
 end;
 
 function TTimecode.FramesToTime: TTime;
@@ -135,8 +120,6 @@ end;
 { T C   O p e r a t o r s . }
 
 class operator TTimecode.Add(a, b: TTimecode): TTimecode;
-var
-  ATimeStamp: TTimeStamp;
 begin
   if a.fFPS = b.fFPS then
     result.fFrames := a.fFrames + b.fFrames
@@ -207,6 +190,13 @@ begin
     else
       result := false;
   end;
+end;
+
+class operator TTimecode.Initialize(out Dest: TTimecode);
+begin
+  Dest.fFrames := 0;
+  Dest.fFPS := DefFramesPerSec;
+  Dest.fFPF := DefFramesPerFoot;
 end;
 
 class operator TTimecode.LessThan(a, b: TTimecode): Boolean;

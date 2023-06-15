@@ -25,6 +25,14 @@ object Main: TMain
     Height = 15
     Caption = 'tc2 = 24fps 100 frames'
   end
+  object Label3: TLabel
+    Left = 72
+    Top = 200
+    Width = 169
+    Height = 15
+    AutoSize = False
+    Caption = 'tc1 '
+  end
   object Button1: TButton
     Left = 16
     Top = 16
