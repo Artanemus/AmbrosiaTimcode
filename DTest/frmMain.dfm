@@ -11,4 +11,27 @@ object Main: TMain
   Font.Name = 'Segoe UI'
   Font.Style = []
   TextHeight = 15
+  object Label1: TLabel
+    Left = 32
+    Top = 47
+    Width = 118
+    Height = 15
+    Caption = 'tc1 = 24fps 100 frames'
+  end
+  object Label2: TLabel
+    Left = 32
+    Top = 68
+    Width = 118
+    Height = 15
+    Caption = 'tc2 = 24fps 100 frames'
+  end
+  object Button1: TButton
+    Left = 16
+    Top = 16
+    Width = 249
+    Height = 25
+    Caption = 'create x 2 TTimecode, then sum.'
+    TabOrder = 0
+    OnClick = Button1Click
+  end
 end

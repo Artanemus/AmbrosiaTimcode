@@ -82,7 +82,7 @@ begin
   FPF_TABLE[12] := FPFrecord.Create(7, '65/70mm 10-perf',
     1.714285714286, 10, 65);
   FPF_TABLE[13] := FPFrecord.Create(6, '65/70mm 11-perf', 2.0, 11, 65);
-  FPF_TABLE[14] := FPFrecord.Create(6, '65/70mm 12-perf', 2.0, 12, 6);
+  FPF_TABLE[14] := FPFrecord.Create(6, '65/70mm 12-perf', 2.0, 12, 65);
   FPF_TABLE[15] := FPFrecord.Create(5, '65/70mm 13-perf', 2.4, 13, 65);
   FPF_TABLE[16] := FPFrecord.Create(5, '65/70mm 14-perf', 2.4, 14, 65);
   FPF_TABLE[17] := FPFrecord.Create(5, '65/70mm 15-perf', 2.4, 15, 65);
