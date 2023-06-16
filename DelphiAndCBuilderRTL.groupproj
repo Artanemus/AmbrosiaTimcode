@@ -6,10 +6,16 @@
         <Projects Include="Timecode_RTL_Delphi.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="Timecode_VCL_Delphi.dproj">
+            <Dependencies/>
+        </Projects>
         <Projects Include="DTest\DelphiTest_RTL.dproj">
             <Dependencies/>
         </Projects>
         <Projects Include="TimecodeRTL.cbproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="TimecodeVCL.cbproj">
             <Dependencies/>
         </Projects>
     </ItemGroup>
@@ -29,6 +35,15 @@
     <Target Name="Timecode_RTL_Delphi:Make">
         <MSBuild Projects="Timecode_RTL_Delphi.dproj" Targets="Make"/>
     </Target>
+    <Target Name="Timecode_VCL_Delphi">
+        <MSBuild Projects="Timecode_VCL_Delphi.dproj"/>
+    </Target>
+    <Target Name="Timecode_VCL_Delphi:Clean">
+        <MSBuild Projects="Timecode_VCL_Delphi.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Timecode_VCL_Delphi:Make">
+        <MSBuild Projects="Timecode_VCL_Delphi.dproj" Targets="Make"/>
+    </Target>
     <Target Name="DelphiTest_RTL">
         <MSBuild Projects="DTest\DelphiTest_RTL.dproj"/>
     </Target>
@@ -47,14 +62,23 @@
     <Target Name="TimecodeRTL:Make">
         <MSBuild Projects="TimecodeRTL.cbproj" Targets="Make"/>
     </Target>
+    <Target Name="TimecodeVCL">
+        <MSBuild Projects="TimecodeVCL.cbproj"/>
+    </Target>
+    <Target Name="TimecodeVCL:Clean">
+        <MSBuild Projects="TimecodeVCL.cbproj" Targets="Clean"/>
+    </Target>
+    <Target Name="TimecodeVCL:Make">
+        <MSBuild Projects="TimecodeVCL.cbproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="Timecode_RTL_Delphi;DelphiTest_RTL;TimecodeRTL"/>
+        <CallTarget Targets="Timecode_RTL_Delphi;Timecode_VCL_Delphi;DelphiTest_RTL;TimecodeRTL;TimecodeVCL"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="Timecode_RTL_Delphi:Clean;DelphiTest_RTL:Clean;TimecodeRTL:Clean"/>
+        <CallTarget Targets="Timecode_RTL_Delphi:Clean;Timecode_VCL_Delphi:Clean;DelphiTest_RTL:Clean;TimecodeRTL:Clean;TimecodeVCL:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="Timecode_RTL_Delphi:Make;DelphiTest_RTL:Make;TimecodeRTL:Make"/>
+        <CallTarget Targets="Timecode_RTL_Delphi:Make;Timecode_VCL_Delphi:Make;DelphiTest_RTL:Make;TimecodeRTL:Make;TimecodeVCL:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

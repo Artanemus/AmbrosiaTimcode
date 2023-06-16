@@ -3,25 +3,26 @@ unit Timecode;
 interface
 
 uses
-  System.SysUtils, System.Classes, System.DateUtils, System.Math, TimecodeTypes;
+  System.SysUtils, System.Classes, System.DateUtils, System.Math;
+
 
 type
-
   TTimecode = record
+
   private
-    fFrames: Double;  // FRAME COUNT
-    fFPS: Double;     // FRAMES PER SECOND
-    fFPF: Double;     // FRAMES PER FOOT (FILM)
+    fFrames: Double; // FRAME COUNT
+    fFPS: Double; // FRAMES PER SECOND
+    fFPF: Double; // FRAMES PER FOOT (FILM)
     FUseDropFrame: Boolean;
-    {TODO -oBSA -cGeneral : code OnChange event}
+    { TODO -oBSA -cGeneral : code OnChange event }
     FOnChange: TNotifyEvent;
 
   public
 
     // In Delphi 10.4 'Managed Records' was introduced.
     // variables can now be initialized
-    class operator Initialize (out Dest: TTimecode);
-    class operator Finalize (var Dest: TTimecode);
+    class operator Initialize(out Dest: TTimecode);
+    class operator Finalize(var Dest: TTimecode);
 
     class operator Add(a, b: TTimecode): TTimecode; // Binary
     class operator Subtract(a, b: TTimecode): TTimecode; // Binary
@@ -53,7 +54,7 @@ type
 
 var
   DefFramesPerSec: Double = 24.0; // typically used in film
-  DefFramesPerFoot: Double = 16;  // 16mm, 35mm 4perf or 70mm 4perf.
+  DefFramesPerFoot: Double = 16; // 16mm, 35mm 4perf or 70mm 4perf.
 
 implementation
 
@@ -91,7 +92,7 @@ end;
 
 class operator TTimecode.Finalize(var Dest: TTimecode);
 begin
-//  Log('destroyed' + IntToHex (IntPtr(@Dest)))
+  // Log('destroyed' + IntToHex (IntPtr(@Dest)))
 end;
 
 function TTimecode.FramesToTime: TTime;

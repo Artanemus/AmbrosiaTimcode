@@ -5,7 +5,8 @@ uses
   frmMain in 'frmMain.pas' {Main},
   Timecode in '..\DSource\Timecode.pas',
   TimecodeTypes in '..\DSource\TimecodeTypes.pas',
-  TimecodeUtils in '..\DSource\TimecodeUtils.pas';
+  TimecodeHelper in '..\DSource\TimecodeHelper.pas',
+  TCEdit in '..\DSource\TCEdit.pas';
 
 {$R *.res}
 

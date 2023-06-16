@@ -1,38 +1,45 @@
-unit TimecodeUtils;
+unit TimecodeHelper;
 
 interface
 
-uses System.Classes, Timecode;
+uses System.Classes, Timecode, TimecodeTypes;
 
 type
-  eStyle = (tcStyle, tcTimeStyle, tcFrameStyle, tcFootageStyle);
 
-type
-  eStandard = (tcPAL, tcFILM, tcNTSCDF, tcNTSC, tcCUSTOM);
+  TTimecodeHelper = record helper for TTimecode
 
-type
-  ePerforation = (mm16, mm16_35_sound, mm35_3perf, mm35_4perf, mm35_8perf,
-    mm65_70_3perf, mm65_70_4perf, mm65_70_5perf, mm65_70_6perf, mm65_70_7perf,
-    mm65_70_8perf, mm65_70_9perf, mm65_70_10perf, mm65_70_11perf,
-    mm65_70_12perf, mm65_70_13perf, mm65_70_14perf, mm65_70_15perf);
+    function StripTCString(const tcString: string): String;
 
-function StriptcString(const tcString: string): String;
+    function GetSimpleText(ATimecodeStyle: tcStyle): String;
+    function GetText(ATimecodeStyle: tcStyle): String;
+    function GetPerfFPF(APerforation: tcPerforation): integer;
+    function GetPerfCount(APerforation: tcPerforation): integer;
+    function GetGateStandard(APerforation: tcPerforation): integer;
+    function GetGateWidth(APerforation: tcPerforation): double;
+    function GetFPSStandard(AStandard: tcStandard): double;
 
-function GetSimpleText(tc: TTimecode; ATimecodeStyle: eStyle): String;
-function GetText(tc: TTimecode; ATimecodeStyle: eStyle): String;
-procedure SetText(var tc: TTimecode; ATimecodeStyle: eStyle; tcString: string);
+    // Special display string ...
+//    function GetStatus(ATimecodeStyle: tcStyle;
+//      APerforation: tcPerforation): string;
+    function GetStatusFPS(ATimecodeStyle: tcStyle): string;
+    function GetStatusFPSShort(): string;
+    function GetStatusFPF(APerforation: tcPerforation): string;
+    function GetStatusStandard(ATimecodeStandard: tctcStandard): string;
+    function GetTimecodeStyle(ATimecodeStyle: tcStyle): string;
 
-function GetPerfFPF(APerforation: ePerforation): integer;
-function GetPerfCount(APerforation: ePerforation): integer;
-function GetGateStandard(APerforation: ePerforation): integer;
-function GetGateWidth(APerforation: ePerforation): double;
-function GetFPSStandard(AStandard: eStandard): double;
+    procedure SetText(var tc: TTimecode; ATimecodeStyle: tcStyle;
+      tcString: string);
+
+  end;
+
+
+
 
 implementation
 
 uses System.SysUtils, System.Character, System.DateUtils, System.Math;
 
-function GetFPSStandard(AStandard: eStandard): double;
+function TTimecodeHelper.GetFPSStandard(AStandard: tcStandard): double;
 begin
   result := 0;
   case AStandard of
@@ -49,7 +56,7 @@ begin
   end;
 end;
 
-function GetGateWidth(APerforation: ePerforation): double;
+function TTimecodeHelper.GetGateWidth(APerforation: tcPerforation): double;
 begin
   result := 0;
   case APerforation of
@@ -92,7 +99,7 @@ begin
   end;
 end;
 
-function GetGateStandard(APerforation: ePerforation): integer;
+function TTimecodeHelper.GetGateStandard(APerforation: tcPerforation): integer;
 begin
   result := 0;
   case APerforation of
@@ -135,7 +142,7 @@ begin
   end;
 end;
 
-function GetPerfCount(APerforation: ePerforation): integer;
+function TTimecodeHelper.GetPerfCount(APerforation: tcPerforation): integer;
 begin
   result := 0;
   case APerforation of
@@ -179,7 +186,7 @@ begin
 
 end;
 
-function GetPerfFPF(APerforation: ePerforation): integer;
+function TTimecodeHelper.GetPerfFPF(APerforation: tcPerforation): integer;
 begin
   result := 0;
   case APerforation of
@@ -222,18 +229,18 @@ begin
   end;
 end;
 
-function GetSimpleText(tc: TTimecode; ATimecodeStyle: eStyle): String;
+function TTimecodeHelper.GetSimpleText(ATimecodeStyle: tcStyle): String;
 var
   FText, temp: String;
   dt: TTime;
   Hour, Min, sec, MSec: Word;
 begin
-  // Verbose, readable text that displays in eStyle
+  // Verbose, readable text that displays in tcStyle
   // Routine trims any redundant fields. String width will vary.
   case ATimecodeStyle of
     tcTimeStyle:
       begin
-        dt := tc.FramesToTime;
+        dt := self.FramesToTime;
         // the time value is empty.
         if (Hour = 0) and (Min = 0) and (sec = 0) then
           FText := '...'
@@ -285,50 +292,157 @@ begin
   result := FText;
 end;
 
-function GetText(tc: TTimecode; ATimecodeStyle: eStyle): String;
+//function TTimecodeHelper.GetStatus(ATimecodeStyle: tcStyle;
+//  APerforation: tcPerforation): string;
+//begin
+//
+//end;
+
+function TTimecodeHelper.GetStatusFPF(APerforation: tcPerforation): string;
+begin
+  result := '';
+  case APerforation of
+    mm16:
+      result := '16mm';
+    mm16_35_sound:
+      result := '16/35mm sound';
+    mm35_3perf:
+      result := '35mm 3-perf';
+    mm35_4perf:
+      result := '35mm 4-perf';
+    mm35_8perf:
+      result := '35mm 8-perf';
+    mm65_70_3perf:
+      result := '65/70mm 3-perf';
+    mm65_70_4perf:
+      result := '65/70mm 4-perf';
+    mm65_70_5perf:
+      result := '65/70mm 5-perf';
+    mm65_70_6perf:
+      result := '65/70mm 6-perf';
+    mm65_70_7perf:
+      result := '65/70mm 7-perf';
+    mm65_70_8perf:
+      result := '65/70mm 8-perf';
+    mm65_70_9perf:
+      result := '65/70mm 9-perf';
+    mm65_70_10perf:
+      result := '65/70mm 10-perf';
+    mm65_70_11perf:
+      result := '65/70mm 11-perf';
+    mm65_70_12perf:
+      result := '65/70mm 12-perf';
+    mm65_70_13perf:
+      result := '65/70mm 13-perf';
+    mm65_70_14perf:
+      result := '65/70mm 14-perf';
+    mm65_70_15perf:
+      result := '65/70mm 15-perf';
+  end;
+end;
+
+function TTimecodeHelper.GetStatusFPS(ATimecodeStyle: tcStyle): string;
+var
+s: string;
+begin
+  result :='';
+  s := Format('%3.2ffps', [self.FPS]);
+  case ATimecodeStyle of
+    tcTimecodeStyle:
+      result := 'Timecode ' + s;
+    tcTimeStyle:
+      result := 'Time ' + s;
+    tcFrameStyle:
+      result := 'Frames ' + s;
+    tcFootageStyle:
+      result := 'Footage ' + s;
+  end;
+end;
+
+function TTimecodeHelper.GetStatusFPSShort(): string;
+var
+d: double;
+begin
+  d := self.FPS;
+	result := Format('%gfps', [d]);
+end;
+
+function TTimecodeHelper.GetStatusStandard(ATimecodeStandard: tctcStandard): string;
+begin
+  result :='';
+  case ATimecodeStandard of
+    tcPAL:
+      result := 'PAL';
+    tcFILM:
+      result := 'FILM';
+    tcNTSCDF:
+      result := 'NTSC DF';
+    tcNTSC:
+      result := 'NTSC';
+    tcCUSTOM:
+      result := 'CUSTOM';
+  end;
+end;
+
+function TTimecodeHelper.GetTimecodeStyle(ATimecodeStyle: tcStyle): string;
+begin
+  result :='';
+  case ATimecodeStyle of
+    tcTimecodeStyle:
+      result := 'HH:MM:SS:FF';
+    tcTimeStyle:
+      result := 'Hr.Min.Sec';
+    tcFrameStyle:
+      result := 'Frames';
+    tcFootageStyle:
+      result := 'Footage';
+  end;
+end;
+
+function TTimecodeHelper.GetText(ATimecodeStyle: tcStyle): String;
 var
   FText, Buf: String;
-  fraction, hours, minutes, seconds, frames: double;
+  fraction, hours, minutes, seconds, dframes: double;
   Quotient, Remainder: single;
   Format: UnicodeString;
   frameRate: double;
 begin
 
-  if tc.UseDropFrame then
+  if self.UseDropFrame then
     FText := '00;00;00;00'
   else
     FText := '00:00:00:00';
 
   Format := '00.00';
-  frames := tc.frames;
+  dframes := self.frames;
   case ATimecodeStyle of
-    tcStyle, tcTimeStyle:
+    tcTimecodeStyle, tcTimeStyle:
       begin
-        frameRate := tc.FPS;
+        frameRate := self.FPS;
         if frameRate = 0 then
         begin
           FText := 'ER:R_:FP:S_';
           Exit;
         end;
-        if (tc.frames = 0) and (ATimecodeStyle = tcStyle) then
+        if (self.frames = 0) and (ATimecodeStyle = tcTimecodeStyle) then
           Exit;
-        if frames < 0 then // sort out negative amounts
+        if dframes < 0 then // sort out negative amounts
         begin
-          frames := -frames;
-          frames := (frameRate * 3600.0 * frameRate) - frames;
+          dframes := -dframes;
+          dframes := (frameRate * 3600.0 * frameRate) - dframes;
         end;
-        if tc.UseDropFrame then
+        if self.UseDropFrame then
         begin
           // take 29.97 and convert for display as 30fps
           // using the drop frame conversion rules...
-          frames := tc.ConvertFramesDFtoND(frames);
+          dframes := self.ConvertFramesDFtoND(dframes);
           // frame rate is now 30fps
           // frameRate = 30.0;
         end;
-        // step one: find the number of seconds.... and the number of frames...
-        seconds := frames / frameRate; //
+        // step one: find the number of seconds.... and the number of dframes...
+        seconds := dframes / frameRate; //
         fraction := frac(seconds); //
-        frames := frameRate * fraction; // find frames
+        dframes := frameRate * fraction; // find dframes
         hours := seconds / 3600.0; // find hours
         hours := Int(hours); //
         if hours > 0 then
@@ -337,13 +451,13 @@ begin
         minutes := Int(minutes); //
         if minutes > 0 then
           seconds := seconds - (60.0 * minutes);
-        fraction := frac(frames); // resolve rounding problems
+        fraction := frac(dframes); // resolve rounding problems
         if fraction >= 0.5 then
-          frames := frames + 1; // round up or down - by hand...
-        if frames >= frameRate then
-        // frames may exceed the current timebase. Make the appropriate adjustment...
+          dframes := dframes + 1; // round up or down - by hand...
+        if dframes >= frameRate then
+        // dframes may exceed the current timebase. Make the appropriate adjustment...
         begin
-          frames := 0; //
+          dframes := 0; //
           seconds := seconds + 1; //
         end;
         if seconds >= 60 then
@@ -356,7 +470,7 @@ begin
           minutes := 0;
           hours := hours + 1;
         end;
-        if ATimecodeStyle = tcStyle then
+        if ATimecodeStyle = tcTimecodeStyle then
         begin
           Buf := FormatFloat(Format, hours);
           // sloppy - but safe way of preparing the string for diplay...
@@ -368,7 +482,7 @@ begin
           Buf := FormatFloat(Format, seconds); // find seconds
           FText[7] := Buf[1];
           FText[8] := Buf[2];
-          Buf := FormatFloat(Format, frames);
+          Buf := FormatFloat(Format, dframes);
           FText[10] := Buf[1];
           FText[11] := Buf[2];
         end
@@ -379,11 +493,11 @@ begin
         end;
       end;
     tcFrameStyle:
-      FText := String.Format('%dfr', [frames]);
+      FText := String.Format('%dfr', [dframes]);
     tcFootageStyle:
       begin
-        Quotient := FMod(Trunc(frames), Trunc(tc.FPF));
-        Remainder := frac(frames / tc.FPF) * tc.FPF;
+        Quotient := FMod(Trunc(dframes), Trunc(self.FPF));
+        Remainder := frac(dframes / self.FPF) * self.FPF;
         FText := String.Format('%0.0fFt.%2.0ffr', [Quotient, Remainder]);
       end;
 
@@ -395,7 +509,7 @@ begin
 
 end;
 
-procedure SetText(var tc: TTimecode; ATimecodeStyle: eStyle; tcString: string);
+procedure TTimecodeHelper.SetText(var tc: TTimecode; ATimecodeStyle: tcStyle; tcString: string);
 var
   str1, str2: String;
   I: integer;
@@ -433,7 +547,7 @@ begin
 
   case (ATimecodeStyle) of
 
-    eStyle.tcStyle: // cheap and nasty way to extract HH:MM:SS:FF
+    tcStyle.tcTimecodeStyle: // cheap and nasty way to extract HH:MM:SS:FF
       begin
         str2 := str1.SubString(1, 2);
         frames := StrToInt(str2) * fph;
@@ -444,7 +558,7 @@ begin
         str2 := str1.SubString(7, 2);
         frames := frames + StrToInt(str2);
       end;
-    eStyle.tcTimeStyle:
+    tcStyle.tcTimeStyle:
       begin
         // extract hrs::Mins::Secs...
         str2 := str1.SubString(3, 2);
@@ -455,11 +569,11 @@ begin
         frames := StrToInt(str2) * tc.FPS + frames;
       end;
 
-    eStyle.tcFrameStyle:
+    tcStyle.tcFrameStyle:
       begin
         frames := StrToIntDef(str1, 0);
       end;
-    eStyle.tcFootageStyle:
+    tcStyle.tcFootageStyle:
       begin
         // parameter contains feet only; - no frames...
         frames := StrToInt(str1);
@@ -472,7 +586,7 @@ begin
   tc.frames := frames;
 end;
 
-function StriptcString(const tcString: string): String;
+function TTimecodeHelper.StripTCString(const tcString: string): String;
 var
   I: integer;
   S: string;
