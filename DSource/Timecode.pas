@@ -43,6 +43,7 @@ type
     function ConvertFramesDFtoND(value: Double): Double;
     function FramesToTime(): TTime;
     procedure TimeToFrames(dt: TTime);
+
     // PRIMARY Core parameters ...
     property frames: Double read fFrames write fFrames;
     property FPS: Double read fFPS write fFPS;

@@ -121,7 +121,6 @@
         <DCCReference Include="Timecode_RTL_Delphi.dcp"/>
         <DCCReference Include="vcl.dcp"/>
         <DCCReference Include="DSource\TCEdit.pas"/>
-        <DCCReference Include="DSource\TimecodeTypes.pas"/>
         <DCCReference Include="DSource\TimecodeHelper.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>

@@ -2,14 +2,28 @@ unit TimecodeHelper;
 
 interface
 
-uses System.Classes, Timecode, TimecodeTypes;
+uses System.Classes, Timecode;
+
+type
+  tcStyle = (tcTimecodeStyle, tcTimeStyle, tcFrameStyle, tcFootageStyle);
+
+type
+  tcStandard = (tcPAL, tcFILM, tcNTSCDF, tcNTSC, tcCUSTOM);
+
+type
+  tcPerforation = (mm16, mm16_35_sound, mm35_3perf, mm35_4perf, mm35_8perf,
+    mm65_70_3perf, mm65_70_4perf, mm65_70_5perf, mm65_70_6perf, mm65_70_7perf,
+    mm65_70_8perf, mm65_70_9perf, mm65_70_10perf, mm65_70_11perf,
+    mm65_70_12perf, mm65_70_13perf, mm65_70_14perf, mm65_70_15perf);
+
+type
+  tcOperation = (tcMultiply, tcAdd, tcSubtract, tcDivide, tcEquals, tcNone);
 
 type
 
   TTimecodeHelper = record helper for TTimecode
 
-    function StripTCString(const tcString: string): String;
-
+    function GetRawText(const tcString: string): String;
     function GetSimpleText(ATimecodeStyle: tcStyle): String;
     function GetText(ATimecodeStyle: tcStyle): String;
     function GetPerfFPF(APerforation: tcPerforation): integer;
@@ -19,21 +33,25 @@ type
     function GetFPSStandard(AStandard: tcStandard): double;
 
     // Special display string ...
-//    function GetStatus(ATimecodeStyle: tcStyle;
-//      APerforation: tcPerforation): string;
-    function GetStatusFPS(ATimecodeStyle: tcStyle): string;
-    function GetStatusFPSShort(): string;
-    function GetStatusFPF(APerforation: tcPerforation): string;
-    function GetStatusStandard(ATimecodeStandard: tctcStandard): string;
-    function GetTimecodeStyle(ATimecodeStyle: tcStyle): string;
+    // function GetStatus(ATimecodeStyle: tcStyle;
+    // APerforation: tcPerforation): string;
+    // function GetTextFPS(ATimecodeStyle: tcStyle): string;overload;
+    function GetTextFPS(): string;
+    function GetTextPerforation(APerforation: tcPerforation): string;
+    function GetTextStandard(ATimecodeStandard: tcStandard): string;
+    function GetTextTimecodeStyle(ATimecodeStyle: tcStyle): string;
+
+    function IterTimecodeStyle(CurrTimecodeStyle: tcStyle;
+      DoForward: boolean = true): tcStyle;
+    function IterStandard(CurrStandard: tcStandard; DoForward: boolean)
+      : tcStandard;
+    function IterPerforation(CurrPerforation: tcPerforation; DoForward: boolean)
+      : tcPerforation;
 
     procedure SetText(var tc: TTimecode; ATimecodeStyle: tcStyle;
       tcString: string);
 
   end;
-
-
-
 
 implementation
 
@@ -292,13 +310,14 @@ begin
   result := FText;
 end;
 
-//function TTimecodeHelper.GetStatus(ATimecodeStyle: tcStyle;
-//  APerforation: tcPerforation): string;
-//begin
+// function TTimecodeHelper.GetStatus(ATimecodeStyle: tcStyle;
+// APerforation: tcPerforation): string;
+// begin
 //
-//end;
+// end;
 
-function TTimecodeHelper.GetStatusFPF(APerforation: tcPerforation): string;
+function TTimecodeHelper.GetTextPerforation(APerforation
+  : tcPerforation): string;
 begin
   result := '';
   case APerforation of
@@ -341,35 +360,35 @@ begin
   end;
 end;
 
-function TTimecodeHelper.GetStatusFPS(ATimecodeStyle: tcStyle): string;
-var
-s: string;
-begin
-  result :='';
-  s := Format('%3.2ffps', [self.FPS]);
-  case ATimecodeStyle of
-    tcTimecodeStyle:
-      result := 'Timecode ' + s;
-    tcTimeStyle:
-      result := 'Time ' + s;
-    tcFrameStyle:
-      result := 'Frames ' + s;
-    tcFootageStyle:
-      result := 'Footage ' + s;
-  end;
-end;
+// function TTimecodeHelper.GetTextFPS(ATimecodeStyle: tcStyle): string;
+// var
+// s: string;
+// begin
+// result :='';
+// s := Format('%3.2ffps', [self.FPS]);
+// case ATimecodeStyle of
+// tcTimecodeStyle:
+// result := 'Timecode ' + s;
+// tcTimeStyle:
+// result := 'Time ' + s;
+// tcFrameStyle:
+// result := 'Frames ' + s;
+// tcFootageStyle:
+// result := 'Footage ' + s;
+// end;
+// end;
 
-function TTimecodeHelper.GetStatusFPSShort(): string;
+function TTimecodeHelper.GetTextFPS(): string;
 var
-d: double;
+  d: double;
 begin
   d := self.FPS;
-	result := Format('%gfps', [d]);
+  result := Format('%gfps', [d]);
 end;
 
-function TTimecodeHelper.GetStatusStandard(ATimecodeStandard: tctcStandard): string;
+function TTimecodeHelper.GetTextStandard(ATimecodeStandard: tcStandard): string;
 begin
-  result :='';
+  result := '';
   case ATimecodeStandard of
     tcPAL:
       result := 'PAL';
@@ -384,9 +403,9 @@ begin
   end;
 end;
 
-function TTimecodeHelper.GetTimecodeStyle(ATimecodeStyle: tcStyle): string;
+function TTimecodeHelper.GetTextTimecodeStyle(ATimecodeStyle: tcStyle): string;
 begin
-  result :='';
+  result := '';
   case ATimecodeStyle of
     tcTimecodeStyle:
       result := 'HH:MM:SS:FF';
@@ -396,6 +415,63 @@ begin
       result := 'Frames';
     tcFootageStyle:
       result := 'Footage';
+  end;
+end;
+
+function TTimecodeHelper.IterPerforation(CurrPerforation: tcPerforation;
+  DoForward: boolean): tcPerforation;
+var
+  APerforation: tcPerforation;
+begin
+  result := CurrPerforation;
+  for APerforation := Low(tcPerforation) to High(tcPerforation) do
+  begin
+    if APerforation = CurrPerforation then
+    begin
+      if DoForward then
+        result := System.Succ(APerforation)
+      else
+        result := System.Pred(APerforation);
+      break;
+    end;
+  end;
+end;
+
+function TTimecodeHelper.IterStandard(CurrStandard: tcStandard;
+  DoForward: boolean): tcStandard;
+var
+  AStandard: tcStandard;
+begin
+  result := CurrStandard;
+  for AStandard := Low(tcStandard) to High(tcStandard) do
+  begin
+    if AStandard = CurrStandard then
+    begin
+      if DoForward then
+        result := System.Succ(AStandard)
+      else
+        result := System.Pred(AStandard);
+      break;
+    end;
+  end;
+end;
+
+function TTimecodeHelper.IterTimecodeStyle(CurrTimecodeStyle: tcStyle;
+  DoForward: boolean): tcStyle;
+var
+  ATimecodeStyle: tcStyle;
+begin
+  result := CurrTimecodeStyle;
+  for ATimecodeStyle := Low(tcStyle) to High(tcStyle) do
+  begin
+    if ATimecodeStyle = CurrTimecodeStyle then
+    begin
+      if DoForward then
+        result := System.Succ(ATimecodeStyle)
+      else
+        result := System.Pred(ATimecodeStyle);
+      break;
+    end;
   end;
 end;
 
@@ -509,7 +585,8 @@ begin
 
 end;
 
-procedure TTimecodeHelper.SetText(var tc: TTimecode; ATimecodeStyle: tcStyle; tcString: string);
+procedure TTimecodeHelper.SetText(var tc: TTimecode; ATimecodeStyle: tcStyle;
+  tcString: string);
 var
   str1, str2: String;
   I: integer;
@@ -586,7 +663,7 @@ begin
   tc.frames := frames;
 end;
 
-function TTimecodeHelper.StripTCString(const tcString: string): String;
+function TTimecodeHelper.GetRawText(const tcString: string): String;
 var
   I: integer;
   S: string;
