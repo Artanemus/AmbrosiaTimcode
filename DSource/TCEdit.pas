@@ -37,6 +37,7 @@ type
     { Protected declarations }
     fTC: TTimecode; // RECORD
     fTCFont: TFont; // CLASS
+    fTCText: string;
 
     fOperation: tcOperation;
     fPerforation: tcPerforation;
@@ -81,9 +82,9 @@ type
     { Public declarations }
     procedure ClipboardPaste(Sender: TObject);
     procedure ClipboardCopy(Sender: TObject);
-    procedure ToggleStyle(AForward: boolean);
-    procedure ToggleFPS(AForward: boolean);
-    procedure ToggleFPF(AForward: boolean);
+    procedure ToggleStyle(DoForward: boolean);
+    procedure ToggleFPS(DoForward: boolean);
+    procedure ToggleFPF(DoForward: boolean);
     procedure ForceUpdate();
     procedure SetFocus(); reintroduce; virtual;
 
@@ -138,8 +139,8 @@ type
     // property BevelWidth;
 
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
-    property Text: UnicodeString read GetText write SetText;
-    property TC_Font: TFont read fTCFont write fTCFont;
+
+    property Text: String read GetText write SetText;
     property AutoSizeMaxFontSize: integer read fAutoScaleMaxFontSize
       write SetAutoScaleMaxFontSize default 64;
     property ShowStatusFPS: boolean read fShowStatusFPS write SetShowStatusFPS
@@ -150,24 +151,25 @@ type
       write SetShowStatusStyle default True;
     property ShowRawText: boolean read fShowRawText write SetShowRawText
       default True;
-    property AutoScale: boolean read fAutoScale write SetAutoScale default True;
-    property TC_Style: tcStyle read fTimecodeStyle write fTimecodeStyle
-      default tcTimecodeStyle;
-    property TC_Standard: tcStandard read fStandard write fStandard
-      default tcPAL;
-    property Perforation: tcPerforation read fPerforation write fPerforation
-      default mm35_3perf;
     property MathOperation: tcOperation read fOperation write SetOperation
       default tcNone;
     property ShowOperation: boolean read fShowOperation write SetShowOperation
       default False;
+    property AutoScale: boolean read fAutoScale write SetAutoScale default True;
     property Transparent: boolean read fTransparent write SetTransparent
       default False;
-    property UseDropFrame: boolean read GetUseDropFrame write SetUseDropFrame
+    property TC_Font: TFont read fTCFont write fTCFont;
+    property TC_Style: tcStyle read fTimecodeStyle write fTimecodeStyle
+      default tcTimecodeStyle;
+    property TC_Standard: tcStandard read fStandard write fStandard
+      default tcPAL;
+    property TC_Perforation: tcPerforation read fPerforation write fPerforation
+      default mm35_3perf;
+    property TC_UseDropFrame: boolean read GetUseDropFrame write SetUseDropFrame
       default True;
     // TCEdit is a text orientated component... it was never intended to have
     // metamorfic dualality for both string and timecode.
-    property Frames: double read GetFrames write SetFrames;
+    property TC_Frames: double read GetFrames write SetFrames;
     property Modified: boolean read fModified write fModified default False;
     property ShowFocused: boolean read fShowFocused write fShowFocused
       default False;
@@ -375,6 +377,7 @@ begin
   fShowOperation := False;
   fTC.UseDropFrame := True;
   fRawText := '';
+  fTCText := '00:00:00:00';
   Width := 241;
   Height := 65;
 
@@ -496,7 +499,7 @@ end;
 
 function TTCEdit.GetText: String;
 var
-x,y: integer;
+//x,y: integer;
 raw,s : string;
 begin
 	if (fTimecodeStyle = tcTimecodeStyle) and (fStandard =
@@ -550,32 +553,224 @@ end;
 
 procedure TTCEdit.KeyUp(Key: Word; Shift: TShiftState);
 begin
+  // NOTE : 'c' and VK_NUMPAD3: are duplicate cases in a switch...
+  // COPY TEXT and TC to CLIPBOARD
+  if ((Key = Ord('C')) or (Key = Ord('c'))) and (ssCtrl in Shift) then
+  begin
+    fEditing := True;
+    ClipboardCopy(self);
+  end
+  // PASTE TC or TEXT to APPLICATION
+  else if ((Key = Ord('V')) or (Key = Ord('v'))) and (ssCtrl in Shift) then
+  begin
+    fEditing := True;
+    ClipboardPaste(self);
+  end
+  // All other keys are handled by the base routine.
+  // All other keys are handled by the base routine.
+  else
+  begin
+    case Key of
+      VK_DECIMAL, VK_OEM_PERIOD, Ord('0') .. Ord('9'), VK_NUMPAD0 .. VK_NUMPAD9:
+        begin
+          fEditing := True;
+          // The period key funcions as '00' when in timecode style.
+          if (Key = VK_OEM_PERIOD) or (Key = Ord('.')) or (Key = VK_DECIMAL)
+          then
+          begin
+            // the period key is ignore when using frames or footage
+            if fTimecodeStyle = tcTimecodeStyle then
+              fRawText := fRawText + '00'
+            else if fTimecodeStyle = tcFootageStyle then
+            begin
+              // input is toggles between footage and frames...
+              { TODO : Write routine to allow for VK_OEM_PERIOD when in TTimecode.eStyle:tcStyle }
+            end;
+          end
+          else if Key > Ord('9') then
+            fRawText := fRawText + Chr(Key - $30)
+          else
+            fRawText := fRawText + Chr(Key);
+          fTCText := fRawText;
+          fModified := True;
+          Invalidate;
+          Changed;
+        end;
+      VK_BACK:
+        begin
+          fEditing := True;
+          Delete(fRawText, Length(fRawText), 1);
+          fTCText := fRawText;
+          fModified := True;
+          Invalidate;
+          Changed;
+        end;
+      VK_CLEAR, VK_ESCAPE:
+        begin
+          fEditing := True;
+          fTC.Frames := 0;
+          fRawText := '';
+          fModified := True;
+          Invalidate;
+          Changed;
+        end;
+    end;
+  end;
 
 end;
 
 procedure TTCEdit.Paint;
+var
+  padTop, padLeft, txtHeight, txtWidth, w: Integer;
+  fLine1h, fLine3h, fLine2w, fLine2h: Integer;
+  s: String;
 begin
+  if fTransparent then
+    DrawParentImage(Self, Canvas);
+  // fShowRawText - user has forced display of raw text
+  // FEditing - user is entering keyboard data and has entered edit mode
+  if fEditing or fShowRawText then
+    s := GetText
+  else
+    s := fTC.GetText(fTimecodeStyle);
+  if ShowOperation then
+    s := String(fTC.GetOperation(fOperation)) + s;
+  // calculate the heights for status lines 1 and 3.
+  Canvas.Font.Assign(Font);
+  // Units subtracted to keep display 'tight'
+  fLine1h := (Canvas.TextHeight(s) - fLineLead);
+  fLine3h := fLine1h;
+  // Calculate the actual display co-ordinates (minus margins) ...
+  w := ClientRect.Width - (Margins.Left + Margins.Right);
+  padTop := 0;
+  padLeft := padTop;
+  txtWidth := 0;
+  txtHeight := 0;
+  // DISPLAY TIMECODE ...
+  if not s.IsEmpty then
+  begin
+    if fAutoScale and (fTCFont.Size <> 0) then
+      Canvas.Font.Assign(fTCFont)
+    else
+      Canvas.Font.Assign(Font);
+    // if canvas font is so small - it's unreadable - don't paint...
+    if -(Canvas.Font.Height) >= 1 then
+    begin
+      // Calculate height and width parameters for paint().
+      fLine2w := Canvas.TextWidth(s);
+      Canvas.Brush.Style := bsClear;
+      Canvas.Pen.Style := psSolid;
+      if AutoScale then
+      begin
+        // (Alignment: taRightJustify)
+        if (fTimecodeStyle = tcframeStyle) or (fTimecodeStyle = tcfootageStyle) then
+          padLeft := ClientRect.Left + (w - fLine2w)
+        // (Alignment: taCenter)
+        else
+          padLeft := ClientRect.Left + ((w - fLine2w) div 2);
+      end
+      else
+      begin
+        if Alignment = taLeftJustify then
+          padLeft := ClientRect.Left + Margins.Left
+        else if Alignment = taRightJustify then
+          padLeft := ClientRect.Left + (w - fLine2w)
+        // (Alignment: taCenter)
+        else
+          padLeft := ClientRect.Left + ((w - fLine2w) div 2);
+      end;
+      padTop := ClientRect.Top + Margins.Top;
+      if fShowStatusStyle then
+        Inc(padTop, fLine1h);
+      Canvas.TextOut(padLeft, padTop, s);
 
+      // ISFOCUSED?? draw a line under the text
+      fLine2h := Canvas.TextHeight(s);
+      Canvas.Brush.Style := bsClear;
+      Canvas.Pen.Style := psSolid;
+      Canvas.Pen.Width := 1;
+      if Focused and ShowFocused then
+        Canvas.Pen.Color := clRed
+      else
+        Canvas.Pen.Color := Color;
+      // Subtract # pixel to raise the 'focused' line into the text ascending seriff zone.
+      // Makes for a better display when using only numbers.
+      Canvas.MoveTo(padLeft, padTop + fLine2h - 2);
+      Canvas.LineTo(padLeft + fLine2w, padTop + fLine2h - 2);
+    end;
+  end;
+  // -----------------------------------
+  Canvas.Font.Assign(Font);
+  // DISPLAY STATUS FPS displayed bottom.right.
+  if fShowStatusFPS then
+  begin
+    s := fTC.GetTextFPS;
+    txtWidth := Canvas.TextWidth(s);
+    padLeft := ClientRect.Right - Margins.Right - txtWidth;
+    padTop := ClientRect.Bottom - Margins.Bottom - fLine3h - fLineLead;
+    Canvas.TextOut(padLeft, padTop, s);
+  end;
+  // DISPLAY STATUS FPF displayed bottom.left.
+  if fShowStatusFPF then
+  begin
+    s := fTC.GetTextPerforation(fPerforation);
+    padLeft := ClientRect.Left + Margins.Left;
+    padTop := ClientRect.Bottom - Margins.Bottom - fLine3h - fLineLead;
+    Canvas.TextOut(padLeft, padTop, s);
+  end;
+  // DISPLAY STATUS STYLE top.right.
+  if fShowStatusStyle then
+  begin
+    s := fTC.GetTextTimecodeStyle(fTimecodeStyle);
+    txtWidth := Canvas.TextWidth(s);
+    padLeft := ClientRect.Right - Margins.Right - txtWidth;
+    padTop := ClientRect.Top + Margins.Top;
+    Canvas.TextOut(padLeft, padTop, s);
+  end;
+  if BorderWidth > 0 then
+  begin
+    Canvas.Brush.Style := bsSolid;
+    Canvas.Pen.Style := psClear;
+    if Focused and ShowFocused then
+      Canvas.Brush.Color := clHighlight
+    else
+      Canvas.Brush.Color := clBackground;
+    // Note : 1xpixel frame width.
+    Canvas.FrameRect(ClientRect);
+  end;
 end;
 
 procedure TTCEdit.SetAlignment(Value: TAlignment);
 begin
-
+	if (FAlignment <> Value) then begin
+		FAlignment := Value;
+		Invalidate;
+	end;
 end;
 
 procedure TTCEdit.SetAutoScale(Value: boolean);
 begin
-
+	if (fAutoScale <> Value) then begin
+		fAutoScale := Value;
+		Invalidate;
+	end
 end;
 
 procedure TTCEdit.SetAutoScaleMaxFontSize(Value: integer);
 begin
-
+	if (fAutoScaleMaxFontSize <> Value) then begin
+		fAutoScaleMaxFontSize := Value;
+		if (fTCFont.Size > fAutoScaleMaxFontSize) then begin
+			AdjustSize;
+			Invalidate;
+		end;
+	end;
 end;
 
 procedure TTCEdit.SetFocus;
 begin
-
+	inherited SetFocus;
+	Invalidate;
 end;
 
 procedure TTCEdit.SetFrames(Value: double);
@@ -589,37 +784,71 @@ end;
 
 procedure TTCEdit.SetOperation(Value: tcOperation);
 begin
-
+	if (fOperation <> Value) then begin
+		fOperation := Value;
+		Invalidate;
+	end;
 end;
 
 procedure TTCEdit.SetShowOperation(Value: boolean);
 begin
-
+	if (fShowOperation <> Value) then begin
+		fShowOperation := Value;
+		AdjustSize;
+		Invalidate;
+	end;
 end;
 
 procedure TTCEdit.SetShowRawText(Value: boolean);
 begin
-
+// user option to display raw keyboard input
+	if (fShowRawText <> Value) then begin
+		fShowRawText := Value;
+		Invalidate;
+	end;
 end;
 
 procedure TTCEdit.SetShowStatusFPF(Value: boolean);
 begin
-
+	if (fShowStatusFPF <> Value) then begin
+		fShowStatusFPF := Value;
+		AdjustSize;
+		Invalidate;
+	end;
 end;
 
 procedure TTCEdit.SetShowStatusFPS(Value: boolean);
 begin
-
+	if (fShowStatusFPS <> Value) then begin
+		fShowStatusFPS := Value;
+		AdjustSize;
+		Invalidate;
+	end;
 end;
 
 procedure TTCEdit.SetShowStatusStyle(Value: boolean);
 begin
-
+	if (fShowStatusStyle <> Value) then begin
+		fShowStatusStyle := Value;
+		AdjustSize;
+		Invalidate;
+	end;
 end;
 
 procedure TTCEdit.SetText(Value: string);
 begin
-
+	if (fTCText <> Value) then begin
+		fTCText := Value;
+		fRawText := Value;
+		// Indicates whether the user edited the text of the edit control.
+		// Use Modified to determine whether the user changed the Text property
+		// of the edit control. Modified is only reset to False when you assign
+		// a value to the Text property. In particular, it is not reset when
+		// the control receives focus.
+		fModified := false;
+		Invalidate;
+		Changed;
+	end;
 end;
 
 procedure TTCEdit.SetTransparent(Value: boolean);
@@ -633,33 +862,78 @@ end;
 
 procedure TTCEdit.SetUseDropFrame(Value: boolean);
 begin
-
+	if (fTC.UseDropFrame <> Value) then begin
+		fTC.UseDropFrame := Value;
+		Invalidate;
+	end;
 end;
 
 function TTCEdit.StripOutNonNumerical(TCText: string): String;
 begin
-
+	// Strip out any formatting, leaving only numbers.
+  result := fTC.GetRawText(TCText)
 end;
 
-procedure TTCEdit.ToggleFPF(AForward: boolean);
+procedure TTCEdit.ToggleFPF(DoForward: boolean);
 begin
-
+	fTC.IterPerforation(fPerforation, DoForward);
+	Invalidate;
 end;
 
-procedure TTCEdit.ToggleFPS(AForward: boolean);
+procedure TTCEdit.ToggleFPS(DoForward: boolean);
 begin
-
+	fTC.IterStandard(fStandard, DoForward);
+	Invalidate;
 end;
 
-procedure TTCEdit.ToggleStyle(AForward: boolean);
+procedure TTCEdit.ToggleStyle(DoForward: boolean);
 begin
-
+	fTC.IterTimecodeStyle(fTimecodeStyle, DoForward);
+	Invalidate;
 end;
 
 procedure TTCEdit.UpdateAutoScaleFontSize;
+var
+  fLine1h, fLine3h: Integer;
+  s: String;
+  h2, w, h: Integer;
 begin
-
+  if HasParent then
+  begin
+    s := fTCText;
+    if ShowOperation then
+      s := String(fTC.GetOperation(fOperation)) + s;
+    // calculate the heights for status lines 1 and 3.
+    Canvas.Font.Assign(Font);
+    // Units subtracted to keep display 'tight'
+    fLine1h := (Canvas.TextHeight(s) - fLineLead);
+    fLine3h := fLine1h;
+    // get the actual available height for line 2
+    h2 := ClientRect.Height - Margins.Top - Margins.Bottom;
+    if fShowStatusFPS or fShowStatusFPF then
+      Dec(h2, fLine3h);
+    if fShowStatusStyle then
+      Dec(h2, fLine1h);
+    // make line 2 fit.
+    Canvas.Font.Assign(fTCFont);
+    Canvas.Font.Size := fAutoScaleMaxFontSize;
+    w := Canvas.TextWidth(s);
+    h := Canvas.TextHeight(s);
+    if (w > ClientWidth) or (h > h2) then
+    begin
+      // reduce the font size to fit the width
+      repeat
+        Canvas.Font.Size := Canvas.Font.Size - 1;
+        w := Canvas.TextWidth(s);
+        h := Canvas.TextHeight(s);
+      until ((w <= ClientWidth) and (h <= h2)) or (Canvas.Font.Size <= 0);
+    end;
+    // if the results are null - restore to default.
+    if Canvas.Font.Size <> 0 then
+      fTCFont.Size := Canvas.Font.Size;
+  end;
 end;
+
 
 procedure TTCEdit.WMKillFocus(var Message: TMessage);
 begin

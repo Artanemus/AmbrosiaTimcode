@@ -10,36 +10,28 @@ object Main: TMain
   Font.Height = -12
   Font.Name = 'Segoe UI'
   Font.Style = []
+  OnCreate = FormCreate
   TextHeight = 15
-  object Label1: TLabel
-    Left = 32
-    Top = 47
-    Width = 118
-    Height = 15
-    Caption = 'tc1 = 24fps 100 frames'
-  end
-  object Label2: TLabel
-    Left = 32
-    Top = 68
-    Width = 118
-    Height = 15
-    Caption = 'tc2 = 24fps 100 frames'
-  end
-  object Label3: TLabel
-    Left = 72
-    Top = 200
-    Width = 169
-    Height = 15
-    AutoSize = False
-    Caption = 'tc1 '
-  end
-  object Button1: TButton
-    Left = 16
-    Top = 16
-    Width = 249
-    Height = 25
-    Caption = 'create x 2 TTimecode, then sum.'
+  object Edit1: TEdit
+    Left = 8
+    Top = 8
+    Width = 121
+    Height = 23
     TabOrder = 0
-    OnClick = Button1Click
+    Text = 'Edit1'
+  end
+  object TCEdit1: TTCEdit
+    Left = 48
+    Top = 96
+    Alignment = taCenter
+    Text = '00:00:20:21'
+    TC_Font.Charset = DEFAULT_CHARSET
+    TC_Font.Color = clWindowText
+    TC_Font.Height = -85
+    TC_Font.Name = 'Courier New'
+    TC_Font.Style = [fsBold]
+    TC_Standard = tcFILM
+    Perforation = mm35_4perf
+    Frames = 500.000000000000000000
   end
 end

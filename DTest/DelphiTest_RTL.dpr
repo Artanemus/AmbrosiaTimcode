@@ -4,7 +4,6 @@ uses
   Vcl.Forms,
   frmMain in 'frmMain.pas' {Main},
   Timecode in '..\DSource\Timecode.pas',
-  TimecodeTypes in '..\DSource\TimecodeTypes.pas',
   TimecodeHelper in '..\DSource\TimecodeHelper.pas',
   TCEdit in '..\DSource\TCEdit.pas';
 

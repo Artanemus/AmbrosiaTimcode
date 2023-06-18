@@ -31,6 +31,7 @@ type
     function GetGateStandard(APerforation: tcPerforation): integer;
     function GetGateWidth(APerforation: tcPerforation): double;
     function GetFPSStandard(AStandard: tcStandard): double;
+    function GetOperation(AOperation: tcOperation): char;
 
     // Special display string ...
     // function GetStatus(ATimecodeStyle: tcStyle;
@@ -114,6 +115,25 @@ begin
       result := 2.4;
     mm65_70_15perf:
       result := 2.4;
+  end;
+end;
+
+function TTimecodeHelper.GetOperation(AOperation: tcOperation): char;
+begin
+  result := #0;
+  case AOperation of
+    tcMultiply:
+      result := 'x';
+    tcAdd:
+      result := '+';
+    tcSubtract:
+      result := '-';
+    tcDivide:
+      result := '/';
+    tcEquals:
+      result := '=';
+    tcNone:
+      result := #0;
   end;
 end;
 
