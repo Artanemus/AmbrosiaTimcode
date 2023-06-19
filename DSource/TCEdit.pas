@@ -13,52 +13,68 @@ type
 
   type
     tcHotSpot = (hsStatusFPS, hsStatusFPF, hsStatusStyle, hsClientZone);
+    {
+      tcvFPS - '%gfps'
+      tcvFPF - eg. '35mm 4-perf'
+      tcvStanadrd - 'FILM', 'PAL', etc...
+      tcvOperation - eg. '*','+', etc...
+    }
+    tcVisible = (tcvFPS, tcvFPF, tcvStandard, tcvOperation);
+
+    {TODO -oBSA -cGeneral : Intro set of visible elements in TTCEdit;}
+    TC_Visible = set of tcVisible;
 
   private
     { Private declarations }
     fLineLead: integer;
 
     procedure SetAutoScaleMaxFontSize(Value: integer);
-    procedure SetShowRawText(Value: boolean);
-    procedure SetShowStatusFPS(Value: boolean);
-    procedure SetShowStatusFPF(Value: boolean);
-    procedure SetShowStatusStyle(Value: boolean);
     function GetHotSpot(MousePoint: TPoint): tcHotSpot;
     procedure SetOperation(Value: tcOperation);
-    procedure SetShowOperation(Value: boolean);
     procedure SetAutoScale(Value: boolean);
     procedure UpdateAutoScaleFontSize();
     function GetUseDropFrame(): boolean;
     procedure SetUseDropFrame(Value: boolean);
     procedure SetFrames(Value: double);
     function GetFrames(): double;
+    procedure SetShowRawText(Value: boolean);
+
+
+    procedure ShowStatusFPS(Value: boolean);
+    procedure ShowStatusFPF(Value: boolean);
+    procedure ShowStatusStandard(Value: boolean);
+    procedure ShowOperation(Value: boolean);
 
   protected
     { Protected declarations }
-    fTC: TTimecode; // RECORD
-    fTCFont: TFont; // CLASS
+    fTC: TTimecode; // RECORD AUTO-MANAGED
+    fTCFont: TFont; // CLASS CREATE..DESTROY
     fTCText: string;
+    fTCRawText: String;
 
     fOperation: tcOperation;
     fPerforation: tcPerforation;
-    fTimecodeStyle: tcStyle;
+    fTimecodeStyle: tcDisplayMode;
     fStandard: tcStandard;
 
-    fShowOperation: boolean;
-    fShowStatusFPS: boolean;
-    fShowStatusFPF: boolean;
-    fShowStatusStyle: boolean;
+    // move to set of visible TC status elements.
+    fVisibleFPS: boolean;
+    fVisibleFPF: boolean;
+    fVisibleStandard: boolean;
+    fVisibleOperation: boolean;
+
     fShowFocused: boolean;
+    fShowRawText: boolean;
     fTransparent: boolean;
     fAutoScale: boolean;
     fAutoScaleMaxFontSize: integer;
-    fRawText: String;
-    fShowRawText: boolean;
     fEditing: boolean;
     fModified: boolean;
 
     FAlignment: TAlignment;
+    { TODO -oBSA -cGeneral : code OnChange event }
     FOnChange: TNotifyEvent;
+
     procedure Paint(); reintroduce; virtual;
     function StripOutNonNumerical(TCText: string): String;
     function GetText(): String;
@@ -76,13 +92,15 @@ type
     procedure DrawParentImage(AControl: TControl; Dest: TCanvas);
     procedure SetTransparent(Value: boolean);
     procedure SetAlignment(Value: TAlignment);
-    procedure WMKillFocus(var Message: TMessage);
+
+    procedure WMKillFocus(var Message: TMessage); message WM_KILLFOCUS;
 
   public
+
     { Public declarations }
     procedure ClipboardPaste(Sender: TObject);
     procedure ClipboardCopy(Sender: TObject);
-    procedure ToggleStyle(DoForward: boolean);
+    procedure ToggleDisplayMode(DoForward: boolean);
     procedure ToggleFPS(DoForward: boolean);
     procedure ToggleFPF(DoForward: boolean);
     procedure ForceUpdate();
@@ -138,41 +156,47 @@ type
     // property BevelKind;
     // property BevelWidth;
 
+    // O N C H A N G E    E V E N T  .
     property OnChange: TNotifyEvent read FOnChange write FOnChange;
 
     property Text: String read GetText write SetText;
     property AutoSizeMaxFontSize: integer read fAutoScaleMaxFontSize
       write SetAutoScaleMaxFontSize default 64;
-    property ShowStatusFPS: boolean read fShowStatusFPS write SetShowStatusFPS
+    property VisibleFPS: boolean read fVisibleFPS write ShowStatusFPS
       default True;
-    property ShowStatusFPF: boolean read fShowStatusFPF write SetShowStatusFPF
+    property VisibleFPF: boolean read fVisibleFPF write ShowStatusFPF
       default True;
-    property ShowStatusStyle: boolean read fShowStatusStyle
-      write SetShowStatusStyle default True;
-    property ShowRawText: boolean read fShowRawText write SetShowRawText
-      default True;
+    property VisisbleStandard: boolean read fVisibleStandard
+      write ShowStatusStandard default True;
+
     property MathOperation: tcOperation read fOperation write SetOperation
       default tcNone;
-    property ShowOperation: boolean read fShowOperation write SetShowOperation
+    property VisibleOperation: boolean read fVisibleOperation write ShowOperation
       default False;
     property AutoScale: boolean read fAutoScale write SetAutoScale default True;
     property Transparent: boolean read fTransparent write SetTransparent
       default False;
+
     property TC_Font: TFont read fTCFont write fTCFont;
-    property TC_Style: tcStyle read fTimecodeStyle write fTimecodeStyle
-      default tcTimecodeStyle;
+    property TC_Style: tcDisplayMode read fTimecodeStyle write fTimecodeStyle
+      default tcTimecode;
     property TC_Standard: tcStandard read fStandard write fStandard
       default tcPAL;
     property TC_Perforation: tcPerforation read fPerforation write fPerforation
       default mm35_3perf;
     property TC_UseDropFrame: boolean read GetUseDropFrame write SetUseDropFrame
       default True;
+
     // TCEdit is a text orientated component... it was never intended to have
     // metamorfic dualality for both string and timecode.
     property TC_Frames: double read GetFrames write SetFrames;
+
     property Modified: boolean read fModified write fModified default False;
     property ShowFocused: boolean read fShowFocused write fShowFocused
       default False;
+    property ShowRawText: boolean read fShowRawText write SetShowRawText
+      default True;
+
   end;
 
 procedure Register;
@@ -226,7 +250,7 @@ begin
     hsStatusStyle:
       begin
         fEditing := False;
-        fTC.IterTimecodeStyle(fTimecodeStyle, GoForwards);
+        fTC.IterDisplayMode(tcTimecode, GoForwards);
       end;
     hsClientZone:
       ;
@@ -243,47 +267,6 @@ begin
   if (CanFocus()) then
     SetFocus();
 
-  (*
-    int nVirtKey; // virtual-key code
-    eHotSpot hs;
-    bool Forwards;
-    nVirtKey = GetKeyState(VK_CONTROL);
-    /*
-    If the high-order bit is 1, the key is down; otherwise, it is up.
-    If the low-order bit is 1, the key is toggled. A key, such as the
-    CAPS LOCK key, is toggled if it is turned on. The key is off and
-    untoggled if the low-order bit is 0. A toggle key's indicator light
-    (if any) on the keyboard will be on when the key is toggled, and off
-    when the key is untoggled.
-    */
-    // True idicates the Ctrl Key is pressed... need to 'not'
-    Forwards = !((nVirtKey & 0x80) ? true : false);
-    hs = GetHotSpot(Mouse->CursorPos);
-    switch (hs) {
-    case hsStatusFPS:
-    fTC->ToggleFPS(Forwards);
-    break;
-    case hsStatusFPF:
-    fTC->ToggleFPF(Forwards);
-    break;
-    case hsStatusStyle:
-    fEditing = false;
-    fTC->ToggleStyle(Forwards);
-    break;
-    case hsClientZone:
-    default: ;
-    }
-    if (hs == hsStatusFPF || hs == hsStatusFPS) {
-    Invalidate();
-    }
-    if (hs == hsStatusStyle) {
-    AdjustSize();
-    Invalidate();
-    }
-    if (CanFocus())
-    SetFocus();
-
-  *)
 end;
 
 procedure TTCEdit.ClipboardCopy(Sender: TObject);
@@ -292,7 +275,7 @@ begin
   // send to clipboard  Open() and Close() allow us to put multi-items
   // into the clipboard.
   Clipboard.Open;
-  Clipboard.AsText := fTC.GetText(tcTimecodeStyle);
+  Clipboard.AsText := fTC.GetText(tcTimecode);
   // For VCL Components ... TTtimecode isn't a component, it's RECORD.
   // Component passed to Clipboard is dependant on fUseInputStr.
   // Clipboard.SetComponent(TComponent(fTC));
@@ -334,14 +317,14 @@ begin
   if Clipboard.HasFormat(CF_TEXT) and (not Clipboard.AsText.IsEmpty) then
   begin
     // paste text into the caclulator. Text must be SMPTE string
-    fTimecodeStyle := tcTimecodeStyle;
+    fTimecodeStyle := tcTimecode;
     // fText := Clipboard.AsText;
     DoCleanUp := True;
   end;
 
   if (DoCleanUp) then
   begin
-    fRawText := fTC.GetRawText(fTC.GetText(fTimecodeStyle));
+    fTCRawText := fTC.GetRawText(fTC.GetText(fTimecodeStyle));
     Invalidate;
     Changed;
   end;
@@ -355,7 +338,7 @@ begin
 
   fOperation := tcNone;
   fPerforation := mm35_4perf;
-  fTimecodeStyle := tcTimecodeStyle;
+  fTimecodeStyle := tcTimecode;
   fStandard := tcFILM;
 
   // This is required to ensure that TTimecode is registered for streaming.
@@ -369,14 +352,14 @@ begin
   AutoSize := False;
   fAutoScale := True;
   fAutoScaleMaxFontSize := 64;
-  fShowStatusFPS := True;
-  fShowStatusFPF := True;
-  fShowStatusStyle := True;
+  fVisibleFPS := True;
+  fVisibleFPF := True;
+  fVisibleStandard := True;
   // user option to force display of raw keyboard input
   fShowRawText := False;
-  fShowOperation := False;
+  fVisibleOperation := False;
   fTC.UseDropFrame := True;
-  fRawText := '';
+  fTCRawText := '';
   fTCText := '00:00:00:00';
   Width := 241;
   Height := 65;
@@ -449,7 +432,7 @@ var
   zone: tcHotSpot;
 begin
   zone := hsClientZone;
-  if (fShowStatusFPS or fShowStatusFPF or fShowStatusStyle) and HasParent then
+  if (fVisibleFPS or fVisibleFPF or fVisibleStandard) and HasParent then
   begin
     // TDPoint MousePoint - are the pixel coordinates of the mouse pointer within
     // the client area of the control.
@@ -458,7 +441,7 @@ begin
     Canvas.Font.Assign(Font);
     h := Canvas.TextHeight('0');
     // LOCATE FPF
-    if fShowStatusFPF then
+    if fVisibleFPF then
     begin
       r := ClientRect;
       w := Canvas.TextWidth(fTC.GetTextPerforation(fPerforation));
@@ -470,7 +453,7 @@ begin
         zone := hsStatusFPF;
     end;
     // LOCATE FPS
-    if fShowStatusFPS then
+    if fVisibleFPS then
     begin
       r := ClientRect;
       w := Canvas.TextWidth(fTC.GetTextFPS());
@@ -482,10 +465,10 @@ begin
         zone := hsStatusFPS;
     end;
     // LOCATE STYLE
-    if fShowStatusStyle then
+    if fVisibleStandard then
     begin
       r := ClientRect;
-      w := Canvas.TextWidth(fTC.GetTextTimecodeStyle(fTimecodeStyle));
+      w := Canvas.TextWidth(fTC.GetTextDisplayMode(fTimecodeStyle));
       r.Top := r.Top + Margins.Top;
       r.Bottom := r.Top + h;
       r.Right := ClientRect.Right - Margins.Right;
@@ -502,12 +485,12 @@ var
 //x,y: integer;
 raw,s : string;
 begin
-	if (fTimecodeStyle = tcTimecodeStyle) and (fStandard =
+	if (fTimecodeStyle = tcTimecode) and (fStandard =
 		tcNTSCDF) and  fTC.UseDropFrame then begin
 		// always show fully converted text
 		result := fTC.GetText(fTimecodeStyle);
 	end
-	else if (fTimecodeStyle = tcTimecodeStyle) and (fShowRawText or fEditing) then begin
+	else if (fTimecodeStyle = tcTimecode) and (fShowRawText or fEditing) then begin
 		// don't do full syntax checking - just display input string.
 		// remove all non-numerical characters - working backwards....
 		s := '00000000';
@@ -516,7 +499,7 @@ begin
 		else
 			raw := '00:00:00:00';
 
-    s := fTC.GetRawText(fRawText);
+    s := fTC.GetRawText(fTCRawText);
     // Pad with LEADING '0' - if undersized
     while Length(s) < 8 do
       s := '0' + s;
@@ -579,19 +562,19 @@ begin
           then
           begin
             // the period key is ignore when using frames or footage
-            if fTimecodeStyle = tcTimecodeStyle then
-              fRawText := fRawText + '00'
-            else if fTimecodeStyle = tcFootageStyle then
+            if fTimecodeStyle = tcTimecode then
+              fTCRawText := fTCRawText + '00'
+            else if fTimecodeStyle = tcFootage then
             begin
               // input is toggles between footage and frames...
               { TODO : Write routine to allow for VK_OEM_PERIOD when in TTimecode.eStyle:tcStyle }
             end;
           end
           else if Key > Ord('9') then
-            fRawText := fRawText + Chr(Key - $30)
+            fTCRawText := fTCRawText + Chr(Key - $30)
           else
-            fRawText := fRawText + Chr(Key);
-          fTCText := fRawText;
+            fTCRawText := fTCRawText + Chr(Key);
+          fTCText := fTCRawText;
           fModified := True;
           Invalidate;
           Changed;
@@ -599,8 +582,8 @@ begin
       VK_BACK:
         begin
           fEditing := True;
-          Delete(fRawText, Length(fRawText), 1);
-          fTCText := fRawText;
+          Delete(fTCRawText, Length(fTCRawText), 1);
+          fTCText := fTCRawText;
           fModified := True;
           Invalidate;
           Changed;
@@ -609,7 +592,7 @@ begin
         begin
           fEditing := True;
           fTC.Frames := 0;
-          fRawText := '';
+          fTCRawText := '';
           fModified := True;
           Invalidate;
           Changed;
@@ -633,8 +616,8 @@ begin
     s := GetText
   else
     s := fTC.GetText(fTimecodeStyle);
-  if ShowOperation then
-    s := String(fTC.GetOperation(fOperation)) + s;
+  if fVisibleOperation then
+    s := String(fTC.GetTextOperation(fOperation)) + s;
   // calculate the heights for status lines 1 and 3.
   Canvas.Font.Assign(Font);
   // Units subtracted to keep display 'tight'
@@ -663,7 +646,7 @@ begin
       if AutoScale then
       begin
         // (Alignment: taRightJustify)
-        if (fTimecodeStyle = tcframeStyle) or (fTimecodeStyle = tcfootageStyle) then
+        if (fTimecodeStyle = tcFrames) or (fTimecodeStyle = tcFootage) then
           padLeft := ClientRect.Left + (w - fLine2w)
         // (Alignment: taCenter)
         else
@@ -680,7 +663,7 @@ begin
           padLeft := ClientRect.Left + ((w - fLine2w) div 2);
       end;
       padTop := ClientRect.Top + Margins.Top;
-      if fShowStatusStyle then
+      if fVisibleStandard then
         Inc(padTop, fLine1h);
       Canvas.TextOut(padLeft, padTop, s);
 
@@ -702,7 +685,7 @@ begin
   // -----------------------------------
   Canvas.Font.Assign(Font);
   // DISPLAY STATUS FPS displayed bottom.right.
-  if fShowStatusFPS then
+  if fVisibleFPS then
   begin
     s := fTC.GetTextFPS;
     txtWidth := Canvas.TextWidth(s);
@@ -711,7 +694,7 @@ begin
     Canvas.TextOut(padLeft, padTop, s);
   end;
   // DISPLAY STATUS FPF displayed bottom.left.
-  if fShowStatusFPF then
+  if fVisibleFPF then
   begin
     s := fTC.GetTextPerforation(fPerforation);
     padLeft := ClientRect.Left + Margins.Left;
@@ -719,9 +702,9 @@ begin
     Canvas.TextOut(padLeft, padTop, s);
   end;
   // DISPLAY STATUS STYLE top.right.
-  if fShowStatusStyle then
+  if fVisibleStandard then
   begin
-    s := fTC.GetTextTimecodeStyle(fTimecodeStyle);
+    s := fTC.GetTextDisplayMode(fTimecodeStyle);
     txtWidth := Canvas.TextWidth(s);
     padLeft := ClientRect.Right - Margins.Right - txtWidth;
     padTop := ClientRect.Top + Margins.Top;
@@ -790,10 +773,10 @@ begin
 	end;
 end;
 
-procedure TTCEdit.SetShowOperation(Value: boolean);
+procedure TTCEdit.ShowOperation(Value: boolean);
 begin
-	if (fShowOperation <> Value) then begin
-		fShowOperation := Value;
+	if (fVisibleOperation <> Value) then begin
+		fVisibleOperation := Value;
 		AdjustSize;
 		Invalidate;
 	end;
@@ -808,28 +791,28 @@ begin
 	end;
 end;
 
-procedure TTCEdit.SetShowStatusFPF(Value: boolean);
+procedure TTCEdit.ShowStatusFPF(Value: boolean);
 begin
-	if (fShowStatusFPF <> Value) then begin
-		fShowStatusFPF := Value;
+	if (fVisibleFPF <> Value) then begin
+		fVisibleFPF := Value;
 		AdjustSize;
 		Invalidate;
 	end;
 end;
 
-procedure TTCEdit.SetShowStatusFPS(Value: boolean);
+procedure TTCEdit.ShowStatusFPS(Value: boolean);
 begin
-	if (fShowStatusFPS <> Value) then begin
-		fShowStatusFPS := Value;
+	if (fVisibleFPS <> Value) then begin
+		fVisibleFPS := Value;
 		AdjustSize;
 		Invalidate;
 	end;
 end;
 
-procedure TTCEdit.SetShowStatusStyle(Value: boolean);
+procedure TTCEdit.ShowStatusStandard(Value: boolean);
 begin
-	if (fShowStatusStyle <> Value) then begin
-		fShowStatusStyle := Value;
+	if (fVisibleStandard <> Value) then begin
+		fVisibleStandard := Value;
 		AdjustSize;
 		Invalidate;
 	end;
@@ -839,7 +822,7 @@ procedure TTCEdit.SetText(Value: string);
 begin
 	if (fTCText <> Value) then begin
 		fTCText := Value;
-		fRawText := Value;
+		fTCRawText := Value;
 		// Indicates whether the user edited the text of the edit control.
 		// Use Modified to determine whether the user changed the Text property
 		// of the edit control. Modified is only reset to False when you assign
@@ -886,9 +869,9 @@ begin
 	Invalidate;
 end;
 
-procedure TTCEdit.ToggleStyle(DoForward: boolean);
+procedure TTCEdit.ToggleDisplayMode(DoForward: boolean);
 begin
-	fTC.IterTimecodeStyle(fTimecodeStyle, DoForward);
+	fTC.IterDisplayMode(tcTimecode, DoForward);
 	Invalidate;
 end;
 
@@ -901,8 +884,8 @@ begin
   if HasParent then
   begin
     s := fTCText;
-    if ShowOperation then
-      s := String(fTC.GetOperation(fOperation)) + s;
+    if fVisibleOperation then
+      s := String(fTC.GetTextOperation(fOperation)) + s;
     // calculate the heights for status lines 1 and 3.
     Canvas.Font.Assign(Font);
     // Units subtracted to keep display 'tight'
@@ -910,9 +893,9 @@ begin
     fLine3h := fLine1h;
     // get the actual available height for line 2
     h2 := ClientRect.Height - Margins.Top - Margins.Bottom;
-    if fShowStatusFPS or fShowStatusFPF then
+    if fVisibleFPS or fVisibleFPF then
       Dec(h2, fLine3h);
-    if fShowStatusStyle then
+    if fVisibleStandard then
       Dec(h2, fLine1h);
     // make line 2 fit.
     Canvas.Font.Assign(fTCFont);

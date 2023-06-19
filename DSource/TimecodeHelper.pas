@@ -5,7 +5,7 @@ interface
 uses System.Classes, Timecode;
 
 type
-  tcStyle = (tcTimecodeStyle, tcTimeStyle, tcFrameStyle, tcFootageStyle);
+  tcDisplayMode = (tcTimecode, tcTime, tcFrames, tcFootage);
 
 type
   tcStandard = (tcPAL, tcFILM, tcNTSCDF, tcNTSC, tcCUSTOM);
@@ -23,34 +23,37 @@ type
 
   TTimecodeHelper = record helper for TTimecode
 
+    // P R I M A R Y   TTimcode.fFrames  >>>  S T R I N G .
+    function GetText(ADisplayMode: tcDisplayMode): String;
     function GetRawText(const tcString: string): String;
-    function GetSimpleText(ATimecodeStyle: tcStyle): String;
-    function GetText(ATimecodeStyle: tcStyle): String;
+    function GetRawTextLEN8(const tcString: string): String;
+    function GetSimpleText(ADisplayMode: tcDisplayMode): String;
+
+    // P R I M A R Y   S T R I N G  >>>  TTimcode.fFrames.
+    procedure SetText(ADisplayMode: tcDisplayMode;  tcString: string);
+
+    // CONVERSION OF ENUM TO VALUE
     function GetPerfFPF(APerforation: tcPerforation): integer;
     function GetPerfCount(APerforation: tcPerforation): integer;
     function GetGateStandard(APerforation: tcPerforation): integer;
     function GetGateWidth(APerforation: tcPerforation): double;
     function GetFPSStandard(AStandard: tcStandard): double;
-    function GetOperation(AOperation: tcOperation): char;
 
-    // Special display string ...
-    // function GetStatus(ATimecodeStyle: tcStyle;
-    // APerforation: tcPerforation): string;
-    // function GetTextFPS(ATimecodeStyle: tcStyle): string;overload;
-    function GetTextFPS(): string;
+    // Display strings used for status in TTCLable and TTCEdit ...
+    function GetTextFPS(): string;overload;
+    function GetTextFPS(ADisplayMode: tcDisplayMode): string;overload;
     function GetTextPerforation(APerforation: tcPerforation): string;
     function GetTextStandard(ATimecodeStandard: tcStandard): string;
-    function GetTextTimecodeStyle(ATimecodeStyle: tcStyle): string;
+    function GetTextDisplayMode(ADisplayMode: tcDisplayMode): string;
+    function GetTextOperation(AOperation: tcOperation): char;
 
-    function IterTimecodeStyle(CurrTimecodeStyle: tcStyle;
-      DoForward: boolean = true): tcStyle;
+    // ITERATE forward or backward across enum values ...
+    function IterDisplayMode(CurrDisplayMode: tcDisplayMode;
+      DoForward: boolean = true): tcDisplayMode;
     function IterStandard(CurrStandard: tcStandard; DoForward: boolean)
       : tcStandard;
     function IterPerforation(CurrPerforation: tcPerforation; DoForward: boolean)
       : tcPerforation;
-
-    procedure SetText(var tc: TTimecode; ATimecodeStyle: tcStyle;
-      tcString: string);
 
   end;
 
@@ -118,7 +121,7 @@ begin
   end;
 end;
 
-function TTimecodeHelper.GetOperation(AOperation: tcOperation): char;
+function TTimecodeHelper.GetTextOperation(AOperation: tcOperation): char;
 begin
   result := #0;
   case AOperation of
@@ -267,16 +270,16 @@ begin
   end;
 end;
 
-function TTimecodeHelper.GetSimpleText(ATimecodeStyle: tcStyle): String;
+function TTimecodeHelper.GetSimpleText(ADisplayMode: tcDisplayMode): String;
 var
   FText, temp: String;
   dt: TTime;
   Hour, Min, sec, MSec: Word;
 begin
-  // Verbose, readable text that displays in tcStyle
+  // Verbose, readable text that displays in tcDisplayMode
   // Routine trims any redundant fields. String width will vary.
-  case ATimecodeStyle of
-    tcTimeStyle:
+  case ADisplayMode of
+    tcTime:
       begin
         dt := self.FramesToTime;
         // the time value is empty.
@@ -330,7 +333,7 @@ begin
   result := FText;
 end;
 
-// function TTimecodeHelper.GetStatus(ATimecodeStyle: tcStyle;
+// function TTimecodeHelper.GetStatus(ADisplayMode: tcDisplayMode;
 // APerforation: tcPerforation): string;
 // begin
 //
@@ -380,23 +383,23 @@ begin
   end;
 end;
 
-// function TTimecodeHelper.GetTextFPS(ATimecodeStyle: tcStyle): string;
-// var
-// s: string;
-// begin
-// result :='';
-// s := Format('%3.2ffps', [self.FPS]);
-// case ATimecodeStyle of
-// tcTimecodeStyle:
-// result := 'Timecode ' + s;
-// tcTimeStyle:
-// result := 'Time ' + s;
-// tcFrameStyle:
-// result := 'Frames ' + s;
-// tcFootageStyle:
-// result := 'Footage ' + s;
-// end;
-// end;
+function TTimecodeHelper.GetTextFPS(ADisplayMode: tcDisplayMode): string;
+var
+  s: string;
+begin
+  result := '';
+  s := Format('%3.2ffps', [self.FPS]);
+  case ADisplayMode of
+    tcTimecode:
+      result := 'Timecode ' + s;
+    tcTime:
+      result := 'Time ' + s;
+    tcFrames:
+      result := 'Frames ' + s;
+    tcFootage:
+      result := 'Footage ' + s;
+  end;
+end;
 
 function TTimecodeHelper.GetTextFPS(): string;
 var
@@ -423,17 +426,17 @@ begin
   end;
 end;
 
-function TTimecodeHelper.GetTextTimecodeStyle(ATimecodeStyle: tcStyle): string;
+function TTimecodeHelper.GetTextDisplayMode(ADisplayMode: tcDisplayMode): string;
 begin
   result := '';
-  case ATimecodeStyle of
-    tcTimecodeStyle:
+  case ADisplayMode of
+    tcTimecode:
       result := 'HH:MM:SS:FF';
-    tcTimeStyle:
+    tcTime:
       result := 'Hr.Min.Sec';
-    tcFrameStyle:
+    tcFrames:
       result := 'Frames';
-    tcFootageStyle:
+    tcFootage:
       result := 'Footage';
   end;
 end;
@@ -476,26 +479,26 @@ begin
   end;
 end;
 
-function TTimecodeHelper.IterTimecodeStyle(CurrTimecodeStyle: tcStyle;
-  DoForward: boolean): tcStyle;
+function TTimecodeHelper.IterDisplayMode(CurrDisplayMode: tcDisplayMode;
+  DoForward: boolean): tcDisplayMode;
 var
-  ATimecodeStyle: tcStyle;
+  ADisplayMode: tcDisplayMode;
 begin
-  result := CurrTimecodeStyle;
-  for ATimecodeStyle := Low(tcStyle) to High(tcStyle) do
+  result := CurrDisplayMode;
+  for ADisplayMode := Low(tcDisplayMode) to High(tcDisplayMode) do
   begin
-    if ATimecodeStyle = CurrTimecodeStyle then
+    if ADisplayMode = CurrDisplayMode then
     begin
       if DoForward then
-        result := System.Succ(ATimecodeStyle)
+        result := System.Succ(ADisplayMode)
       else
-        result := System.Pred(ATimecodeStyle);
+        result := System.Pred(ADisplayMode);
       break;
     end;
   end;
 end;
 
-function TTimecodeHelper.GetText(ATimecodeStyle: tcStyle): String;
+function TTimecodeHelper.GetText(ADisplayMode: tcDisplayMode): String;
 var
   FText, Buf: String;
   fraction, hours, minutes, seconds, dframes: double;
@@ -511,8 +514,8 @@ begin
 
   Format := '00.00';
   dframes := self.frames;
-  case ATimecodeStyle of
-    tcTimecodeStyle, tcTimeStyle:
+  case ADisplayMode of
+    tcTimecode, tcTime:
       begin
         frameRate := self.FPS;
         if frameRate = 0 then
@@ -520,7 +523,7 @@ begin
           FText := 'ER:R_:FP:S_';
           Exit;
         end;
-        if (self.frames = 0) and (ATimecodeStyle = tcTimecodeStyle) then
+        if (self.frames = 0) and (ADisplayMode = tcTimecode) then
           Exit;
         if dframes < 0 then // sort out negative amounts
         begin
@@ -566,7 +569,7 @@ begin
           minutes := 0;
           hours := hours + 1;
         end;
-        if ATimecodeStyle = tcTimecodeStyle then
+        if ADisplayMode = tcTimecode then
         begin
           Buf := FormatFloat(Format, hours);
           // sloppy - but safe way of preparing the string for diplay...
@@ -588,9 +591,9 @@ begin
             'm' + FormatFloat('00', seconds) + 's';
         end;
       end;
-    tcFrameStyle:
+    tcFrames:
       FText := String.Format('%dfr', [dframes]);
-    tcFootageStyle:
+    tcFootage:
       begin
         Quotient := FMod(Trunc(dframes), Trunc(self.FPF));
         Remainder := frac(dframes / self.FPF) * self.FPF;
@@ -605,18 +608,17 @@ begin
 
 end;
 
-procedure TTimecodeHelper.SetText(var tc: TTimecode; ATimecodeStyle: tcStyle;
+procedure TTimecodeHelper.SetText(ADisplayMode: tcDisplayMode;
   tcString: string);
 var
   str1, str2: String;
-  I: integer;
   frames, fpm, fph: double;
 begin
   frames := 0;
 
   if Length(tcString) = 0 then
   begin
-    tc.frames := 0;
+    self.frames := 0;
     Exit;
   end;
 
@@ -626,36 +628,26 @@ begin
     no error checking of Hrs, Mins, secs, Frames.....!!
   }
 
-  fpm := tc.FPS * 60.0;
-  fph := tc.FPS * 3600.0;
+  fpm := self.FPS * 60.0;
+  fph := self.FPS * 3600.0;
 
   // TEMPLATE REQUIRED '00000000' - MAX LENGTH = 8
-  str1 := tcString;
-  // Remove all non-numerical characters
-  for I := Length(str1) downto 1 do
-    if not str1[I].IsDigit then
-      Delete(str1, I, 1);
-  // Trim the HEAD - if oversized
-  if Length(str1) > 8 then
-    str1 := Copy(str1, Length(str1) - 8 + 1, 8);
-  // Pad with LEADING '0' - if undersized
-  while Length(str1) < 8 do
-    str1 := '0' + str1;
+  str1 := GetRawTextLEN8(tcString);
 
-  case (ATimecodeStyle) of
+  case (ADisplayMode) of
 
-    tcStyle.tcTimecodeStyle: // cheap and nasty way to extract HH:MM:SS:FF
+    tcDisplayMode.tcTimecode: // cheap and nasty way to extract HH:MM:SS:FF
       begin
         str2 := str1.SubString(1, 2);
         frames := StrToInt(str2) * fph;
         str2 := str1.SubString(3, 2);
         frames := StrToInt(str2) * fpm + frames;
         str2 := str1.SubString(5, 2);
-        frames := StrToInt(str2) * tc.FPS + frames;
+        frames := StrToInt(str2) * self.FPS + frames;
         str2 := str1.SubString(7, 2);
         frames := frames + StrToInt(str2);
       end;
-    tcStyle.tcTimeStyle:
+    tcDisplayMode.tcTime:
       begin
         // extract hrs::Mins::Secs...
         str2 := str1.SubString(3, 2);
@@ -663,24 +655,24 @@ begin
         str2 := str1.SubString(5, 2);
         frames := StrToInt(str2) * fpm + frames;
         str2 := str1.SubString(7, 2);
-        frames := StrToInt(str2) * tc.FPS + frames;
+        frames := StrToInt(str2) * self.FPS + frames;
       end;
 
-    tcStyle.tcFrameStyle:
+    tcDisplayMode.tcFrames:
       begin
         frames := StrToIntDef(str1, 0);
       end;
-    tcStyle.tcFootageStyle:
+    tcDisplayMode.tcFootage:
       begin
         // parameter contains feet only; - no frames...
         frames := StrToInt(str1);
-        frames := frames * tc.FPF;
+        frames := frames * self.FPF;
       end;
 
   end;
 
   // Assign value
-  tc.frames := frames;
+  self.frames := frames;
 end;
 
 function TTimecodeHelper.GetRawText(const tcString: string): String;
@@ -699,6 +691,26 @@ begin
     while (Length(S) > 0) and (S[1] = '0') do
       Delete(S, 1, 1);
   end;
+  result := S;
+end;
+
+function TTimecodeHelper.GetRawTextLEN8(const tcString: string): String;
+var
+  I: integer;
+  S: string;
+begin
+  S := tcString;
+  // Strip out non-numbers
+  for I := Length(S) downto 1 do
+    if not S[I].IsDigit then
+      Delete(S, I, 1);
+  // Trim the HEAD - if oversized
+  if Length(s) > 8 then
+    s := Copy(s, Length(s) - 8 + 1, 8);
+  // Pad with LEADING '0' - if undersized
+  while Length(s) < 8 do
+    s := '0' + s;
+
   result := S;
 end;
 

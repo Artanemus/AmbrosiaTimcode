@@ -14,8 +14,7 @@ type
     fFPS: Double; // FRAMES PER SECOND
     fFPF: Double; // FRAMES PER FOOT (FILM)
     FUseDropFrame: Boolean;
-    { TODO -oBSA -cGeneral : code OnChange event }
-    FOnChange: TNotifyEvent;
+
 
   public
 
@@ -49,8 +48,7 @@ type
     property FPS: Double read fFPS write fFPS;
     property FPF: Double read fFPF write fFPF;
     property UseDropFrame: Boolean read FUseDropFrame write FUseDropFrame;
-    // MISC
-    property OnChange: TNotifyEvent read FOnChange write FOnChange;
+
   end;
 
 var
