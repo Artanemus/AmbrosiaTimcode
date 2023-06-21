@@ -25,7 +25,7 @@ package Timecode_VCL_Delphi;
 {$IMAGEBASE $400000}
 {$DEFINE DEBUG}
 {$ENDIF IMPLICITBUILDING}
-{$DESCRIPTION 'Artanemus - SMPTE EBU Timecode VCL - Delphi.'}
+{$DESCRIPTION 'Artanemus - SMPTE EBU Timecode VCL - Delphi. (Designtime)'}
 {$IMPLICITBUILD ON}
 
 requires
@@ -35,6 +35,7 @@ requires
 
 contains
   TCEdit in 'DSource\TCEdit.pas',
-  TimecodeHelper in 'DSource\TimecodeHelper.pas';
+  TimecodeHelper in 'DSource\TimecodeHelper.pas',
+  TCLabel in 'DSource\TCLabel.pas';
 
 end.

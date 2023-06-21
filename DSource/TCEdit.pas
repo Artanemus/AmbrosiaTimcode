@@ -54,7 +54,7 @@ type
 
     fOperation: tcOperation;
     fPerforation: tcPerforation;
-    fTimecodeStyle: tcDisplayMode;
+    fDisplayMode: tcDisplayMode;
     fStandard: tcStandard;
 
     // move to set of visible TC status elements.
@@ -97,6 +97,9 @@ type
 
   public
 
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy(); override;
+
     { Public declarations }
     procedure ClipboardPaste(Sender: TObject);
     procedure ClipboardCopy(Sender: TObject);
@@ -105,9 +108,6 @@ type
     procedure ToggleFPF(DoForward: boolean);
     procedure ForceUpdate();
     procedure SetFocus(); reintroduce; virtual;
-
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy(); override;
 
   published
     { Published declarations }
@@ -169,8 +169,6 @@ type
     property VisisbleStandard: boolean read fVisibleStandard
       write ShowStatusStandard default True;
 
-    property MathOperation: tcOperation read fOperation write SetOperation
-      default tcNone;
     property VisibleOperation: boolean read fVisibleOperation write ShowOperation
       default False;
     property AutoScale: boolean read fAutoScale write SetAutoScale default True;
@@ -178,7 +176,7 @@ type
       default False;
 
     property TC_Font: TFont read fTCFont write fTCFont;
-    property TC_Style: tcDisplayMode read fTimecodeStyle write fTimecodeStyle
+    property TC_DisplayMode: tcDisplayMode read fDisplayMode write fDisplayMode
       default tcTimecode;
     property TC_Standard: tcStandard read fStandard write fStandard
       default tcPAL;
@@ -186,9 +184,6 @@ type
       default mm35_3perf;
     property TC_UseDropFrame: boolean read GetUseDropFrame write SetUseDropFrame
       default True;
-
-    // TCEdit is a text orientated component... it was never intended to have
-    // metamorfic dualality for both string and timecode.
     property TC_Frames: double read GetFrames write SetFrames;
 
     property Modified: boolean read fModified write fModified default False;
@@ -317,14 +312,14 @@ begin
   if Clipboard.HasFormat(CF_TEXT) and (not Clipboard.AsText.IsEmpty) then
   begin
     // paste text into the caclulator. Text must be SMPTE string
-    fTimecodeStyle := tcTimecode;
+    fDisplayMode := tcTimecode;
     // fText := Clipboard.AsText;
     DoCleanUp := True;
   end;
 
   if (DoCleanUp) then
   begin
-    fTCRawText := fTC.GetRawText(fTC.GetText(fTimecodeStyle));
+    fTCRawText := fTC.GetRawText(fTC.GetText(fDisplayMode));
     Invalidate;
     Changed;
   end;
@@ -338,7 +333,7 @@ begin
 
   fOperation := tcNone;
   fPerforation := mm35_4perf;
-  fTimecodeStyle := tcTimecode;
+  fDisplayMode := tcTimecode;
   fStandard := tcFILM;
 
   // This is required to ensure that TTimecode is registered for streaming.
@@ -468,7 +463,7 @@ begin
     if fVisibleStandard then
     begin
       r := ClientRect;
-      w := Canvas.TextWidth(fTC.GetTextDisplayMode(fTimecodeStyle));
+      w := Canvas.TextWidth(fTC.GetTextDisplayMode(fDisplayMode));
       r.Top := r.Top + Margins.Top;
       r.Bottom := r.Top + h;
       r.Right := ClientRect.Right - Margins.Right;
@@ -485,12 +480,12 @@ var
 //x,y: integer;
 raw,s : string;
 begin
-	if (fTimecodeStyle = tcTimecode) and (fStandard =
+	if (fDisplayMode = tcTimecode) and (fStandard =
 		tcNTSCDF) and  fTC.UseDropFrame then begin
 		// always show fully converted text
-		result := fTC.GetText(fTimecodeStyle);
+		result := fTC.GetText(fDisplayMode);
 	end
-	else if (fTimecodeStyle = tcTimecode) and (fShowRawText or fEditing) then begin
+	else if (fDisplayMode = tcTimecode) and (fShowRawText or fEditing) then begin
 		// don't do full syntax checking - just display input string.
 		// remove all non-numerical characters - working backwards....
 		s := '00000000';
@@ -526,7 +521,7 @@ begin
 		result := raw;
 	end
 	else
-		result := fTC.GetText(fTimecodeStyle);
+		result := fTC.GetText(fDisplayMode);
 end;
 
 function TTCEdit.GetUseDropFrame: boolean;
@@ -562,9 +557,9 @@ begin
           then
           begin
             // the period key is ignore when using frames or footage
-            if fTimecodeStyle = tcTimecode then
+            if fDisplayMode = tcTimecode then
               fTCRawText := fTCRawText + '00'
-            else if fTimecodeStyle = tcFootage then
+            else if fDisplayMode = tcFootage then
             begin
               // input is toggles between footage and frames...
               { TODO : Write routine to allow for VK_OEM_PERIOD when in TTimecode.eStyle:tcStyle }
@@ -615,7 +610,7 @@ begin
   if fEditing or fShowRawText then
     s := GetText
   else
-    s := fTC.GetText(fTimecodeStyle);
+    s := fTC.GetText(fDisplayMode);
   if fVisibleOperation then
     s := String(fTC.GetTextOperation(fOperation)) + s;
   // calculate the heights for status lines 1 and 3.
@@ -646,7 +641,7 @@ begin
       if AutoScale then
       begin
         // (Alignment: taRightJustify)
-        if (fTimecodeStyle = tcFrames) or (fTimecodeStyle = tcFootage) then
+        if (fDisplayMode = tcFrames) or (fDisplayMode = tcFootage) then
           padLeft := ClientRect.Left + (w - fLine2w)
         // (Alignment: taCenter)
         else
@@ -704,7 +699,7 @@ begin
   // DISPLAY STATUS STYLE top.right.
   if fVisibleStandard then
   begin
-    s := fTC.GetTextDisplayMode(fTimecodeStyle);
+    s := fTC.GetTextDisplayMode(fDisplayMode);
     txtWidth := Canvas.TextWidth(s);
     padLeft := ClientRect.Right - Margins.Right - txtWidth;
     padTop := ClientRect.Top + Margins.Top;
@@ -761,7 +756,7 @@ var
   s: string;
 begin
   fTC.Frames := Value;
-  s := fTC.GetText(fTimecodeStyle);
+  s := fTC.GetText(fDisplayMode);
   SetText(s);
 end;
 

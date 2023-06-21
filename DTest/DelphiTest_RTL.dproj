@@ -105,6 +105,7 @@
         <DCCReference Include="..\DSource\Timecode.pas"/>
         <DCCReference Include="..\DSource\TimecodeHelper.pas"/>
         <DCCReference Include="..\DSource\TCEdit.pas"/>
+        <DCCReference Include="..\DSource\TCLabel.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
