@@ -49,9 +49,9 @@ type
 
   protected
     { Protected declarations }
-    procedure Paint(); virtual;
-    procedure AdjustSize(); DYNAMIC;
-    procedure Resize(); DYNAMIC;
+    procedure Paint(); reintroduce; virtual;
+    procedure AdjustSize(); reintroduce; DYNAMIC;
+    procedure Resize(); reintroduce; DYNAMIC;
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;

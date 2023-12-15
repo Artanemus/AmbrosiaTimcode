@@ -95,6 +95,15 @@ type
 
     procedure WMKillFocus(var Message: TMessage); message WM_KILLFOCUS;
 
+    // Declare for derived classes (wit: TCCalculator)
+    property TCRawText: string read FTCRawText write FTCRawText;
+
+    property Operation: tcOperation read fOperation;// write fOperation;
+    property Perforation: tcPerforation read fPerforation;// write fPerforation;
+    property DisplayMode: tcDisplayMode read fDisplayMode; // write fDisplayMode;
+    property Standard: tcStandard read fStandard; // write fStandard;
+
+
   public
 
     constructor Create(AOwner: TComponent); override;

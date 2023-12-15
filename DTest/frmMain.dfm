@@ -20,18 +20,4 @@ object Main: TMain
     TabOrder = 0
     Text = 'Edit1'
   end
-  object TCEdit1: TTCEdit
-    Left = 48
-    Top = 96
-    Alignment = taCenter
-    Text = ''
-    ShowRawText = False
-    TC_Font.Charset = DEFAULT_CHARSET
-    TC_Font.Color = clWindowText
-    TC_Font.Height = -85
-    TC_Font.Name = 'Courier New'
-    TC_Font.Style = [fsBold]
-    TC_Standard = tcFILM
-    TC_Perforation = mm35_4perf
-  end
 end

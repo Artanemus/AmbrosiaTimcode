@@ -36,6 +36,7 @@ requires
 contains
   TCEdit in 'DSource\TCEdit.pas',
   TimecodeHelper in 'DSource\TimecodeHelper.pas',
-  TCLabel in 'DSource\TCLabel.pas';
+  TCLabel in 'DSource\TCLabel.pas',
+  TCCalculator in 'DSource\TCCalculator.pas';
 
 end.

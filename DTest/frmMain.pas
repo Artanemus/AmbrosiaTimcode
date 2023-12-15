@@ -11,7 +11,6 @@ uses
 type
   TMain = class(TForm)
     Edit1: TEdit;
-    TCEdit1: TTCEdit;
     procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
